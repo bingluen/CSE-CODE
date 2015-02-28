@@ -29,6 +29,9 @@ public:
    HugeInteger divideOrModulus(HugeInteger op2, bool getDivide);
    void output();
 
+   void setSize(int);
+   void setDigit(int, int);
+
 private:
    int size;              // the number of digits of the integer
    short integer[ 1000 ]; // used to store a positive integer as large as 1000 digits
@@ -36,5 +39,16 @@ private:
    HugeInteger( int ); // constructor
    void divideByTen();
 }; // end class HugeInteger
+
+
+class ProductTable
+{
+public:
+	ProductTable(HugeInteger);
+	short getScalarForDivision(HugeInteger);
+	HugeInteger getProduct(short);
+private:
+	HugeInteger table[10];
+};
 
 #endif

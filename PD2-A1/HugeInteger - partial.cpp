@@ -119,9 +119,9 @@ bool HugeInteger::less(HugeInteger op2)
 	{
 		if (integer[i] < op2.integer[i])
 			return true;
+		if (integer[i] > op2.integer[i])
+			return false;
 	}
-
-	return false;
 }
 
 bool HugeInteger::greater(HugeInteger op2) 
@@ -137,11 +137,11 @@ bool HugeInteger::greater(HugeInteger op2)
 
 	for (int i = size - 1; i >= 0; i--)
 	{
+		if (integer[i] > op2.integer[i])
+			return true;
 		if (integer[i] < op2.integer[i])
 			return false;
 	}
-
-	return true;
 }
 
 bool HugeInteger::lessEqual(HugeInteger op2)
@@ -171,7 +171,7 @@ HugeInteger HugeInteger::subtract(HugeInteger op2)
 		// if number < 0, borrow ten
 		while (result.integer[i] < 0)
 		{
-			result.integer[i] %= 10;
+			result.integer[i] += 10;
 			result.integer[i + 1] -= 1;
 		}
 	}
@@ -251,37 +251,119 @@ HugeInteger HugeInteger::modulus(HugeInteger op2)
 
 HugeInteger HugeInteger::divideOrModulus(HugeInteger op2, bool getDivide)
 {
-	HugeInteger remainder(1), quotiend(1), product(1);
-	for (int i = size; i >= op2.size; i--)
+	HugeInteger quotiend, remainder;
+	
+	ProductTable productTable(op2);
+
+
+	for (int i = size - 1; i >= 0; i--)
 	{
-		HugeInteger tempProduct(1), tempQutiend(1);
-		remainder.integer[size - i] = integer[i - 1];
+		//step 1平移數字(若是最開始則skip)
+		if (i < size - 1)
+		{
+			for (int j = remainder.size - 1; j >= 0; j--)
+				remainder.integer[j + 1] = remainder.integer[j];
+		}
 		
+
+		//step 2 get 下一個數字
+		remainder.integer[0] = integer[i];
+		remainder.size++;
+			
+		//step 2 - 1 Correction size of remainder
+		for (; remainder.integer[remainder.size - 1] <= 0 && remainder.size > 0; remainder.size--);
+
+		//step 3 平移 quotiend
+		if (quotiend.integer[quotiend.size - 1] > 0)
+		{
+			for (int j = quotiend.size; j >= 0; j--)
+				quotiend.integer[j + 1] = quotiend.integer[j];
+			quotiend.integer[0] = 0;
+			quotiend.size++;
+		}
+
+		//step 4 compare remainder & op2
 		if (remainder.greaterEqual(op2))
 		{
-			//get Q_n
-			while (remainder.greaterEqual(tempProduct))
+			//step 4 - 1 if remainder >= op2, try to get quotiend
+			if (quotiend.size == 0)
 			{
-				quotiend.integer[0] = tempQutiend.integer[0];
-				tempQutiend.integer[0] += 1;
-				product = tempProduct;
-				tempProduct = op2.multiply(tempQutiend);
+				quotiend.size = 1;
 			}
+			quotiend.integer[0] = productTable.getScalarForDivision(remainder);
 
-			//get remainder
-			for (int j = quotiend.size - 1; j >= 0; j--)
-				quotiend.integer[j + 1] = quotiend.integer[j];
-			quotiend.size++;
-			remainder = remainder.subtract(product);
+			//step 4 - 2 do subtract
+			remainder = remainder.subtract(productTable.getProduct(quotiend.integer[0]));
+
+		}
+
+		//step 5 if remainder is divisible, 
+		if (remainder.zero())
+		{	
+			//compare digit of remaining of dividend & digit of op2
+			if (op2.size <= i + 1)
+			{
+				//digit of remaining of dividend > digit of op2 continue
+				continue;
+			}
+			else 
+			{
+				//Otherwise get remaining to remainder and break;
+				//offset remainder
+				for (int j = remainder.size - 1; j >= 0; j--)
+				{
+					remainder.integer[i + j] = remainder.integer[j];
+				}
+				for (int j = i - 1; j >= 0; j--)
+				{
+					remainder.integer[j] = integer[j];
+					remainder.size++;
+				}
+				break;
+			}
 		}
 	}
-
-	//check digit of remainder and qutiend
-	for (quotiend.size = size; quotiend.integer[quotiend.size - 1] == 0; quotiend.size--);
-	for (remainder.size = size; remainder.integer[remainder.size - 1] == 0; remainder.size--);
 
 	if (getDivide)
 		return quotiend;
 	else
 		return remainder;
+}
+
+void HugeInteger::setSize(int s)
+{
+	size = s;
+}
+
+void HugeInteger::setDigit(int p, int digit)
+{
+	integer[p] = digit;
+}
+
+ProductTable::ProductTable(HugeInteger base)
+{
+	HugeInteger scalar;
+	scalar.setSize(1);
+	for (int i = 0; i < 10; i++)
+	{
+		scalar.setDigit(0, i);
+		table[i] = base.multiply(scalar);
+	}
+		
+}
+
+short ProductTable::getScalarForDivision(HugeInteger remainder)
+{
+	short scalar = 0;
+	while (scalar < 10 && table[scalar].lessEqual(remainder))
+		scalar++;
+
+	scalar--;
+
+	return scalar;
+}
+
+HugeInteger ProductTable::getProduct(short p)
+{
+	return table[p];
 }
