@@ -160,18 +160,13 @@ void Vector::reserve(unsigned int n)
 
 void Vector::assign(int *first, int *last)
 {
-	for (int *mPtr = ptr; mPtr < end(); mPtr++)
+	//count size & capacity
+	size = last - first;
+	capacity = size;
+	ptr = new int[capacity];
+	for (unsigned int i = 0; i < size; i++)
 	{
-		//delete memory if isn't in range
-		if (mPtr < first || mPtr >= last)
-		{
-			delete mPtr;
-			size--;
-			capacity--;
-		}
-
-		// asjust ptr to point first position
-		ptr = first;
+		*(ptr + i) = *(first + i);
 	}
 }
 
