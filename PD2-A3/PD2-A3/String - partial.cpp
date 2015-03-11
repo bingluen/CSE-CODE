@@ -66,6 +66,16 @@ void String::display()
    cout << endl << endl;
 }
 
+
+String::String(const String &str)
+{
+	size = str.size;
+	capacity = str.capacity;
+	sPtr = new char[capacity];
+
+	memcpy(sPtr, str.sPtr, size);
+}
+
 void String::resize(unsigned int n)
 {
 	//if n > cpapcity, call reserver to re-allocate memory
@@ -73,17 +83,21 @@ void String::resize(unsigned int n)
 	{
 		reserve(n);
 	}
+	for (unsigned int i = size; i < n; i++)
+	{
+		sPtr[i] = '\0';
+	}
 	size = n;
 }
 
-void String::reserve(unsigned int n = 0)
+void String::reserve(unsigned int n)
 {
 	//if n > capacity, re-allocate memory
 	if (n > capacity)
 	{
 		//re-allocate memory
 		char *tempPtr = sPtr;
-		capacity = (size / 16) * 16 + 15;
+		capacity = (n / 16) * 16 + 15;
 		sPtr = new char[capacity];
 
 		//copy data to new allocate memory from source
@@ -100,29 +114,57 @@ void String::reserve(unsigned int n = 0)
 String& String::assign(char *first, char *last)
 {
 	size = last - first;
+	capacity = (size / 16) * 16 + 15;
+	sPtr = new char[capacity];
+	memcpy(sPtr, first, size);
+	return *this;
 }
 
-String& String::erase(unsigned int pos = 0, unsigned int len = npos)
+String& String::erase(unsigned int pos, unsigned int len)
 {
+	
+	for (unsigned int i = pos; i + len < size; i++)
+	{
+		sPtr[i] = sPtr[i + len];
+	}
+	size -= len;
 
+	return *this;
 }
 
 char* String::erase(char *first, char *last)
 {
-
+	for (unsigned int i = 0; i < size - (first - sPtr); i++)
+	{
+		*(first + i) = *(last + i);
+	}
+	size -= last - first;
+	return first;
 }
 
-unsigned int String::find(char c, unsigned int pos = 0) const
+unsigned int String::find(char c, unsigned int pos) const
 {
 	//const placed on tail of function is mean:
 	//this function can NOT modify any memeber variable of itself
-	//only call by const object
+	//and const object only can call const function
+
+	//start from pos
+	for (unsigned int i = pos; i < size; i++)
+	{
+		//if find character return character position
+		if (sPtr[i] == c)
+			return i;
+	}
+
+	return npos;
 
 }
 
-String String::substr(unsigned int pos = 0, unsigned int len = npos) const
+String String::substr(unsigned int pos, unsigned int len) const
 {
 	//const placed on tail of function is mean:
 	//this function can NOT modify any memeber variable of itself
-	//only call by const object
+	//and const object only can call const function
+
+	return *(new String(sPtr + pos, len));
 }
