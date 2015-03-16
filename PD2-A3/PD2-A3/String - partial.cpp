@@ -69,10 +69,13 @@ void String::display()
 
 String::String(const String &str)
 {
+	//get size and capacity from source string
 	size = str.size;
 	capacity = str.capacity;
+	//allocate memory
 	sPtr = new char[capacity];
-
+	
+	//copy string from source
 	memcpy(sPtr, str.sPtr, size);
 }
 
@@ -83,6 +86,8 @@ void String::resize(unsigned int n)
 	{
 		reserve(n);
 	}
+
+	//fill empty character
 	for (unsigned int i = size; i < n; i++)
 	{
 		sPtr[i] = '\0';
@@ -113,32 +118,41 @@ void String::reserve(unsigned int n)
 
 String& String::assign(char *first, char *last)
 {
+	//setting size and capacity
 	size = last - first;
 	capacity = (size / 16) * 16 + 15;
+	//allocate memory
 	sPtr = new char[capacity];
+	//copy string from source
 	memcpy(sPtr, first, size);
 	return *this;
 }
 
 String& String::erase(unsigned int pos, unsigned int len)
 {
-	
+	//start from pos to end	
 	for (unsigned int i = pos; i + len < size; i++)
 	{
+		//move character to overwrite character which will be erase
 		sPtr[i] = sPtr[i + len];
 	}
-	size -= len;
+
+	//cuont new size
+	size = (len > size - pos) ? pos : size - len;
 
 	return *this;
 }
 
 char* String::erase(char *first, char *last)
 {
+	//i is mean the offset form first, and should not grater the offset
+	//from sPtr
 	for (unsigned int i = 0; i < size - (first - sPtr); i++)
 	{
 		*(first + i) = *(last + i);
 	}
-	size -= last - first;
+	//count size
+	size = (last - sPtr > size) ? first - sPtr : size - (last - first);
 	return first;
 }
 
@@ -165,6 +179,8 @@ String String::substr(unsigned int pos, unsigned int len) const
 	//const placed on tail of function is mean:
 	//this function can NOT modify any memeber variable of itself
 	//and const object only can call const function
-
-	return *(new String(sPtr + pos, len));
+	if (len <= size - pos)
+		return *(new String(sPtr + pos, len));
+	else
+		return *(new String(sPtr + pos, size - pos));
 }
