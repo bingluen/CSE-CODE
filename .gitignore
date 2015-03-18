@@ -194,3 +194,8 @@ FakesAssemblies/
 
 # Visual Studio 6 workspace options file
 *.opt
+
+# VS trash for c++ only
+*.sln
+*.vcxproj
+*.filters
