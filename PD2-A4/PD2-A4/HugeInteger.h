@@ -13,7 +13,7 @@ class HugeInteger
    friend ostream &operator<<( ostream &, const HugeInteger & );
 
    //let Product table can access private constructor and helpIncrements
-   friend ProductTable;
+   friend class ProductTable;
 public:
    HugeInteger(); // default constructor
    HugeInteger( const HugeInteger &integerToCopy ); // copy constructor
