@@ -154,9 +154,9 @@ void Vector::reserve(unsigned int n)
 		return;
 
 	int *tempPtr = ptr;
-	ptr = new int[n];
+	ptr = new int[(n % 10 == 0) ? n : ((n / 10 + 1) * 10)];
 	memcpy(tempPtr, ptr, capacity);
-	capacity = n;
+	capacity = (n % 10 == 0) ? n : ((n / 10 + 1) * 10);
 	delete[]tempPtr;
 }
 
