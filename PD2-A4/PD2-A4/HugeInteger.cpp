@@ -101,8 +101,64 @@ HugeInteger HugeInteger::operator-( const HugeInteger op2 ) const
    if( *this == op2 )
       return zero;
 
+   HugeInteger difference(integer.getSize());
+
+   for (size_t i = 0; i < op2.integer.getSize(); i++)
+   {
+	   difference.integer[i] = difference.integer[i] + integer[i] - op2.integer[i];
+	   // if number < 0, borrow ten
+	   while (difference.integer[i] < 0)
+	   {
+		   difference.integer[i + 1] -= 1;
+		   difference.integer[i] += 10;
+	   }
+   }
+
+   //將沒有被處理到的digit直接拉下來
+   for (size_t i = op2.integer.getSize(); i < integer.getSize(); i++)
+   {
+	   difference.integer[i] = difference.integer[i] + integer[i];
+   }
+
+   //check size
+   while (difference.integer.getSize() > 0 
+	   && !difference.integer[difference.integer.getSize()])
+	   difference.integer.resize(difference.integer.getSize() - 1);
+
+
    return difference;
 } // end function operator-
+
+// multiplication operator; HugeInteger * HugeInteger
+HugeInteger HugeInteger::operator*(const  HugeInteger op2) const
+{
+	HugeInteger product(integer.getSize() + op2.integer.getSize());
+
+	for (size_t i = 0; i < integer.getSize(); i++)
+	{
+		for (size_t j = 0; j < op2.integer.getSize(); j++)
+		{
+			product.integer[i + j] = integer[i] * op2.integer[j];
+		}
+	}
+
+	//carry
+	for (size_t i = 0; i < product.integer.getSize(); i++)
+	{
+		if (product.integer[i] >= 10)
+		{
+			product.integer[i + 1] += product.integer[i] / 10;
+			product.integer[i] %= 10;
+		}
+	}
+
+	//check size
+	while (product.integer.getSize() > 0
+		&& !product.integer[product.integer.getSize()])
+		product.integer.resize(product.integer.getSize() - 1);
+
+
+}// end function operator*
 
 // division operator; HugeInteger / HugeInteger
 HugeInteger HugeInteger::operator/( const HugeInteger op2 ) const
@@ -156,3 +212,41 @@ ostream &operator<<( ostream &output, const HugeInteger &hugeInteger )
 
    return output; // enables cout << x << y;
 } // end function operator<<
+
+
+bool HugeInteger::operator<(const HugeInteger &right) const  // less than
+{
+
+}
+
+bool HugeInteger::operator>(const HugeInteger &right) const  // greater than
+{
+
+}
+
+bool HugeInteger::operator<=(const HugeInteger &right) const // less than or equal to
+{
+
+}
+
+bool HugeInteger::operator>=(const HugeInteger &right) const // greater than or equal to
+{
+
+}
+
+// prefix increment operator
+HugeInteger& HugeInteger::operator++()
+{
+
+}
+
+// postfix increment operator
+HugeInteger HugeInteger::operator++(int)
+{
+
+}
+
+void HugeInteger::helpIncrement()
+{
+	// increments a HugeInteger by 1
+}
