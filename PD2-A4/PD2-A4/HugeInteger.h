@@ -5,9 +5,14 @@
 #include <fstream>
 #include "Vector.h" // include definition of class Vector 
 
+using namespace std; //for ofstream and ifstream
+
 class HugeInteger 
 {
    friend ostream &operator<<( ostream &, const HugeInteger & );
+
+   //let Product table can access private constructor and helpIncrements
+   friend ProductTable;
 public:
    HugeInteger(); // default constructor
    HugeInteger( const HugeInteger &integerToCopy ); // copy constructor
