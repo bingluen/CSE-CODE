@@ -8,7 +8,7 @@ ProductTable::ProductTable()
 	available = false;
 }
 
-ProductTable::ProductTable(HugeInteger &base)
+ProductTable::ProductTable(const HugeInteger &base)
 {
 	HugeInteger scalar(1);
 
@@ -21,7 +21,7 @@ ProductTable::ProductTable(HugeInteger &base)
 	available = true;
 }
 
-void ProductTable::setBase(HugeInteger &base)
+void ProductTable::setBase(const HugeInteger &base)
 {
 	HugeInteger scalar(1);
 
