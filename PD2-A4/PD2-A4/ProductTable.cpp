@@ -8,7 +8,7 @@ ProductTable::ProductTable()
 	available = false;
 }
 
-ProductTable::ProductTable(HugeInteger base)
+ProductTable::ProductTable(HugeInteger &base)
 {
 	HugeInteger scalar(1);
 
@@ -21,7 +21,7 @@ ProductTable::ProductTable(HugeInteger base)
 	available = true;
 }
 
-void ProductTable::setBase(HugeInteger base)
+void ProductTable::setBase(HugeInteger &base)
 {
 	HugeInteger scalar(1);
 
@@ -34,7 +34,7 @@ void ProductTable::setBase(HugeInteger base)
 	available = true;
 }
 
-unsigned short ProductTable::getScalarForDivison(HugeInteger remainder)
+unsigned short ProductTable::getScalarForDivison(HugeInteger &remainder)
 {
 
 	if (!available)
