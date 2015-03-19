@@ -34,7 +34,7 @@ void ProductTable::setBase(HugeInteger &base)
 	available = true;
 }
 
-unsigned short ProductTable::getScalarForDivison(HugeInteger &remainder)
+unsigned short ProductTable::getScalarForDivison(const HugeInteger &remainder) const
 {
 
 	if (!available)
@@ -49,7 +49,7 @@ unsigned short ProductTable::getScalarForDivison(HugeInteger &remainder)
 	return i - 1;
 }
 
-HugeInteger ProductTable::getProduct(unsigned short scalar)
+HugeInteger ProductTable::getProduct(unsigned short scalar) const
 {
 	if (available && scalar >= 0 && scalar <= 9)
 		return table[scalar];

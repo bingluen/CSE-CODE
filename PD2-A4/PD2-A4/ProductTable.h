@@ -14,10 +14,10 @@ public:
 	void setBase(const HugeInteger &base);
 
 	//get max scalar of base which lessequal than remainder
-	unsigned short getScalarForDivison(const HugeInteger &remainder);
+	unsigned short getScalarForDivison(const HugeInteger &remainder) const;
 
 	//get scalar * base by pass a scalar (0 <= scalar <= 9)
-	HugeInteger getProduct(unsigned short scalar);
+	HugeInteger getProduct(unsigned short scalar) const;
 
 	//return availability
 	bool isAvailable();
