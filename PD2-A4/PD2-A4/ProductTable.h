@@ -8,13 +8,13 @@ public:
 	ProductTable(); 
 
 	//Constructor with table base
-	ProductTable(HugeInteger &base); 
+	ProductTable(const HugeInteger &base); 
 
 	//set table base
-	void setBase(HugeInteger &base); 
+	void setBase(const HugeInteger &base);
 
 	//get max scalar of base which lessequal than remainder
-	unsigned short getScalarForDivison(HugeInteger &remainder); 
+	unsigned short getScalarForDivison(const HugeInteger &remainder);
 
 	//get scalar * base by pass a scalar (0 <= scalar <= 9)
 	HugeInteger getProduct(unsigned short scalar);
