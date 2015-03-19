@@ -98,6 +98,12 @@ bool Vector::operator!=(const Vector &right) const
 int &Vector::operator[](unsigned int subscript)
 {
 	// subscript operator for non-const objects returns modifiable lvalue
+	if (subscript >= size || subscript < 0)
+	{
+		cerr << "index out of bound " << endl;
+		return;
+	}
+		
 	return ptr[subscript];
 }
 
@@ -105,6 +111,11 @@ int &Vector::operator[](unsigned int subscript)
 int Vector::operator[](unsigned int subscript) const
 {
 	// subscript operator for const objects returns rvalue
+	if (subscript >= size || subscript < 0)
+	{
+		cerr << "index out of bound " << endl;
+		return;
+	}
 	return ptr[subscript];
 }
 
