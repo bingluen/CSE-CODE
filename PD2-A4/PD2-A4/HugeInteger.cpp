@@ -2,6 +2,7 @@
 #include <iostream>
 using namespace std;
 #include "HugeInteger.h" // include definition of class HugeInteger 
+#include "ProductTable.h" // include definitaion of calss ProductTable
 
 // default constructor
 HugeInteger::HugeInteger()
@@ -122,7 +123,7 @@ HugeInteger HugeInteger::operator-( const HugeInteger op2 ) const
 
    //check size
    while (difference.integer.getSize() > 0 
-	   && !difference.integer[difference.integer.getSize()])
+	   && !difference.integer[difference.integer.getSize() - 1])
 	   difference.integer.resize(difference.integer.getSize() - 1);
 
 
@@ -154,7 +155,7 @@ HugeInteger HugeInteger::operator*(const  HugeInteger op2) const
 
 	//check size
 	while (product.integer.getSize() > 0
-		&& !product.integer[product.integer.getSize()])
+		&& !product.integer[product.integer.getSize() - 1])
 		product.integer.resize(product.integer.getSize() - 1);
 
 
@@ -166,7 +167,14 @@ HugeInteger HugeInteger::operator/( const HugeInteger op2 ) const
    HugeInteger zero( 1 );
    if( *this < op2 )
       return zero;
+   // if this equal to op2 return 1
+   if (*this == op2)
+   {
+	   zero.helpIncrement();
+	   return zero;
+   }
 
+   HugeInteger quotient(this->doDivision(op2, true));
 
    return quotient;
 } // end function operator/
@@ -177,6 +185,14 @@ HugeInteger HugeInteger::operator%( const HugeInteger op2 ) const
    if( *this < op2 )
       return *this;
 
+   HugeInteger zero(1);
+   // if this equal to op2 return 0
+   if (*this == op2)
+   {
+	   return zero;
+   }
+
+   HugeInteger remainder(this->doDivision(op2, false));
 
    return remainder;
 } // end function operator%
@@ -216,37 +232,177 @@ ostream &operator<<( ostream &output, const HugeInteger &hugeInteger )
 
 bool HugeInteger::operator<(const HugeInteger &right) const  // less than
 {
+	
+	if (this->integer == right.integer)
+		return false;
+	//check size
+	else if (this->integer.getSize() < right.integer.getSize())
+		return true;
+	else if (this->integer.getSize() > right.integer.getSize())
+		return false;
 
+	//if size is equal, compare every bit
+	for (size_t i = this->integer.getSize(); i >= 0; i--)
+	{
+		if (this->integer[i] > right.integer[i])
+			return false;
+	}
+
+	return true;
 }
 
 bool HugeInteger::operator>(const HugeInteger &right) const  // greater than
 {
+	if (this->integer == right.integer)
+		return false;
+	//check size
+	else if (this->integer.getSize() > right.integer.getSize())
+		return true;
+	else if (this->integer.getSize() < right.integer.getSize())
+		return false;
 
+	//if size is equal, compare every bit
+	for (size_t i = this->integer.getSize(); i >= 0; i--)
+	{
+		if (this->integer[i] < right.integer[i])
+			return false;
+	}
+
+	return true;
+		
 }
 
 bool HugeInteger::operator<=(const HugeInteger &right) const // less than or equal to
 {
-
+	return !(*this > right);
 }
 
 bool HugeInteger::operator>=(const HugeInteger &right) const // greater than or equal to
 {
-
+	return !(*this < right);
 }
 
 // prefix increment operator
 HugeInteger& HugeInteger::operator++()
 {
+	HugeInteger temp(*this);
+	this->helpIncrement();
 
+	return temp;
 }
 
 // postfix increment operator
 HugeInteger HugeInteger::operator++(int)
 {
-
+	this->helpIncrement();
+	return *this;
 }
 
 void HugeInteger::helpIncrement()
 {
 	// increments a HugeInteger by 1
+	
+	//first increment Lower digit
+	this->integer[0]++;
+
+	//check carry
+	for (size_t i = 0; i < this->integer.getSize() - 1; i++)
+	{
+		if (this->integer[i] > 9)
+		{
+			this->integer[i + 1] += this->integer[i] / 10;
+			this->integer[i] %= 10;
+		}
+	}
+
+	//check highest bit is small than 10
+	if (this->integer[this->integer.getSize() - 1] > 9)
+	{
+		this->integer.resize(this->integer.getSize() + 1);
+		this->integer[this->integer.getSize() - 1] = this->integer[this->integer.getSize() - 2] / 10;
+		this->integer[this->integer.getSize() - 2] %= 10;
+	}
+}
+
+HugeInteger& HugeInteger::doDivision(const HugeInteger &right, bool getQuotient) const
+{
+	HugeInteger quotient, remainder;
+	ProductTable table(right);
+
+	//Form highest digit start
+	for (size_t i = this->integer.getSize() - 1; i >= 0; i++)
+	{
+		//move digit (if this is first loop, skip)
+		/*
+		move digit form i to i+1
+		*/
+		if (i < this->integer.getSize() - 1)
+		{
+			remainder.integer.resize(remainder.integer.getSize() + 1);
+			for (size_t j = remainder.integer.getSize(); j >= 0; j++)
+				remainder.integer[j] = remainder.integer[j - 1];
+		}
+
+		//get next digit
+		remainder.integer[0] = this->integer[i];
+
+		//step 2 - 1 Correction size of remainder
+		for (; remainder.integer[remainder.integer.getSize() - 1] <= 0 
+			&& remainder.integer.getSize() > 0
+			; remainder.integer.resize(remainder.integer.getSize() - 1));
+
+		//step 3 平移 quotiend
+		if (quotient.integer[quotient.integer.getSize() - 1] > 0)
+		{
+			quotient.integer.resize(quotient.integer.getSize() + 1);
+			for (int j = quotient.integer.getSize(); j >= 0; j--)
+				quotient.integer[j + 1] = quotient.integer[j];			
+		}
+
+		//step 4 compare remainder & right
+		if (remainder >= right)
+		{
+			//step 4 - 1 if remainder >= right, try to get quotiend
+			if (quotient.integer.getSize() == 0)
+			{
+				quotient.integer.resize(1);
+			}
+			quotient.integer[0] = table.getScalarForDivison(remainder);
+
+			//step 4 - 2 do subtract
+			remainder = remainder - table.getProduct(quotient.integer[0]);
+
+		}
+
+		//step 5 if remainder is divisible, 
+		if (remainder.zero())
+		{
+			//compare digit of remaining of dividend & digit of op2
+			if (right.integer.getSize() <= i + 1)
+			{
+				//digit of remaining of dividend > digit of op2 continue
+				continue;
+			}
+			else
+			{
+				//Otherwise get remaining to remainder and break;
+				//offset remainder
+				for (int j = remainder.integer.getSize() - 1; j >= 0; j--)
+				{
+					remainder.integer[i + j] = remainder.integer[j];
+				}
+				for (int j = i - 1; j >= 0; j--)
+				{
+					remainder.integer.resize(remainder.integer.getSize() + 1);
+					remainder.integer[j] = integer[j];
+				}
+				break;
+			}
+		}
+	}
+
+	if (getQuotient)
+		return quotient;
+	else
+		return remainder;
 }
