@@ -101,7 +101,7 @@ int &Vector::operator[](unsigned int subscript)
 	if (subscript >= size || subscript < 0)
 	{
 		cerr << "index out of bound " << endl;
-		return;
+		return 0;
 	}
 		
 	return ptr[subscript];
@@ -114,7 +114,7 @@ int Vector::operator[](unsigned int subscript) const
 	if (subscript >= size || subscript < 0)
 	{
 		cerr << "index out of bound " << endl;
-		return;
+		return 0;
 	}
 	return ptr[subscript];
 }

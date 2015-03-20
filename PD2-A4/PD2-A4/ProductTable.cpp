@@ -55,6 +55,8 @@ HugeInteger ProductTable::getProduct(unsigned short scalar) const
 		return table[scalar];
 	else
 		cerr << "scalar out of bound (0 <= scalar <= 9) or table is not available." << endl;
+
+	return table[0];
 }
 
 bool ProductTable::isAvailable()
