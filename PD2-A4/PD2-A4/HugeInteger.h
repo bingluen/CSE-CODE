@@ -4,7 +4,6 @@
 
 #include <fstream>
 #include "Vector.h" // include definition of class Vector 
-#include "ProductTable.h"
 
 using namespace std; //for ofstream and ifstream
 
