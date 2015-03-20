@@ -1,7 +1,9 @@
 // Member-function definitions for class Vector.
 #include <iostream>
+#include <cstring> // for memcpy
 using namespace std;
 #include "Vector.h" // include definition of class Vector 
+
 
 // default constructor
 Vector::Vector( unsigned int n, const int val )
@@ -38,7 +40,7 @@ Vector::Vector(const Vector &vectorToCopy)
 	ptr = new int[capacity];
 	
 	//copy data form source vector
-	memcpy(ptr, vectorToCopy.ptr, size);
+	memcpy(ptr, vectorToCopy.ptr, size * sizeof(int));
 	
 }
 
@@ -63,7 +65,7 @@ const Vector &Vector::operator=(const Vector &right)
 
 	//copy data & reset size
 	size = right.size;
-	memcpy(ptr, right.ptr, size);
+	memcpy(ptr, right.ptr, size*sizeof(int));
 
 	return *this;
 }
@@ -100,11 +102,11 @@ int &Vector::operator[](unsigned int subscript)
 	// subscript operator for non-const objects returns modifiable lvalue
 	if (subscript >= size || subscript < 0)
 	{
-		cerr << "index out of bound " << endl;
+		cerr << "index " << subscript << " out of bound " << endl;
 		return *ptr;
 	}
 		
-	return ptr[subscript];
+	return this->ptr[subscript];
 }
 
 
@@ -113,10 +115,10 @@ int Vector::operator[](unsigned int subscript) const
 	// subscript operator for const objects returns rvalue
 	if (subscript >= size || subscript < 0)
 	{
-		cerr << "index out of bound " << endl;
+		cerr << "index " << subscript << " out of bound " << endl;
 		return 0;
 	}
-	return ptr[subscript];
+	return this->ptr[subscript];
 }
 
 void Vector::resize(unsigned int n)
@@ -155,7 +157,7 @@ void Vector::reserve(unsigned int n)
 
 	int *tempPtr = ptr;
 	ptr = new int[(n % 10 == 0) ? n : ((n / 10 + 1) * 10)];
-	memcpy(ptr, tempPtr, size);
+	memcpy(ptr, tempPtr, size*sizeof(int));
 	capacity = (n % 10 == 0) ? n : ((n / 10 + 1) * 10);
 	delete[]tempPtr;
 }
