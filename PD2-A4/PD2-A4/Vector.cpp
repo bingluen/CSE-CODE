@@ -155,7 +155,7 @@ void Vector::reserve(unsigned int n)
 
 	int *tempPtr = ptr;
 	ptr = new int[(n % 10 == 0) ? n : ((n / 10 + 1) * 10)];
-	memcpy(tempPtr, ptr, capacity);
+	memcpy(ptr, tempPtr, size);
 	capacity = (n % 10 == 0) ? n : ((n / 10 + 1) * 10);
 	delete[]tempPtr;
 }
@@ -172,7 +172,7 @@ void Vector::push_back(const int val)
 	if (size + 1 > capacity)
 		reserve(size + 1);
 
-	ptr[size + 1] = val;
+	ptr[size] = val;
 	size++;
 
 }
