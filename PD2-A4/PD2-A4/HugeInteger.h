@@ -57,6 +57,7 @@ private:
    void helpIncrement();             // increments a HugeInteger by 1
 
    HugeInteger& doDivision(const HugeInteger &right, bool getQuotient) const;
+   void shiftDigitLeft();
 }; // end class HugeInteger
 
 #endif
