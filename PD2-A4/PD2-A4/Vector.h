@@ -52,6 +52,7 @@ public:
    // This effectively increases the vector size by one,                                    
    // which causes an automatic reallocation of the allocated storage space                                    
    // if -and only if- the new vector size surpasses the current vector capacity.
+
 private:
    unsigned int size; // the number of elements in the vector
                       // This is the number of actual objects held in the vector,
