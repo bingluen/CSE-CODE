@@ -102,6 +102,7 @@ int &Vector::operator[](unsigned int subscript)
 	// subscript operator for non-const objects returns modifiable lvalue
 	if (subscript >= size || subscript < 0)
 	{
+		//if out of bound print error massage
 		cerr << "index " << subscript << " out of bound " << endl;
 		return *ptr;
 	}
@@ -115,6 +116,7 @@ int Vector::operator[](unsigned int subscript) const
 	// subscript operator for const objects returns rvalue
 	if (subscript >= size || subscript < 0)
 	{
+		//if out of bound print error massage
 		cerr << "index " << subscript << " out of bound " << endl;
 		return 0;
 	}
@@ -132,12 +134,15 @@ void Vector::resize(unsigned int n)
 	// If n is also greater than the current vector capacity,                                  
 	// an automatic reallocation of the allocated storage space takes place.
 
+	//compare n and capacity, if n > capacity call reserve to re-allocate memory
 	if (n > capacity)
 		reserve(n);
 
+	//set new elements as 0
 	for (size_t i = size; i < n; i++)
 		ptr[i] = 0;
 
+	//reset size to n 
 	size = n;
 }
 
@@ -155,10 +160,19 @@ void Vector::reserve(unsigned int n)
 	if (n <= capacity)
 		return;
 
+	//backup pointer traget
 	int *tempPtr = ptr;
+	
+	//re-allocate memory
 	ptr = new int[(n % 10 == 0) ? n : ((n / 10 + 1) * 10)];
+
+	//copy data to new reallocated memory form source
 	memcpy(ptr, tempPtr, size*sizeof(int));
+
+	//set capacity
 	capacity = (n % 10 == 0) ? n : ((n / 10 + 1) * 10);
+
+	//free memory
 	delete[]tempPtr;
 }
 
@@ -171,10 +185,14 @@ void Vector::push_back(const int val)
 	// which causes an automatic reallocation of the allocated storage space                                    
 	// if -and only if- the new vector size surpasses the current vector capacity.
 
+	//Checking whether sufficient capacity, if not call reserve to reallocate memory
 	if (size + 1 > capacity)
 		reserve(size + 1);
 
+	//push value to back
 	ptr[size] = val;
+
+	//increment size
 	size++;
 
 }
