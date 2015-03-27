@@ -21,12 +21,23 @@ Identifier::Identifier( const char *s ) : String( s )
 
 /* Assigment 5 - implement Identifier*/
 
-const Identifier & Identifier::operator = (const String &)
+const Identifier & Identifier::operator = (const String &right)
 {
 	// assignment operator
+	String::operator=(right);
+
+	return *this;
 }
 
-bool keyword()
+bool Identifier::keyword()
 {
 	// check if the current identifier is a C++ keyword
+
+	for (size_t i = 0; i < 61; i++)
+	{
+		if (!strcmp(this->begin(), keywords[i]))
+			return true;
+	}
+
+	return false;
 }

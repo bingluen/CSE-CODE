@@ -47,3 +47,16 @@ int main()
 
    system( "pause" );
 }
+
+/* Assignment 5 - implement*/
+
+bool duplicate(Identifier identifiers[], int pos)
+{
+	for (int i = 0; i < pos; i++)
+	{
+		if (!strcmp(identifiers[i].begin(), identifiers[pos].begin()))
+			return true;
+	}
+
+	return false;
+}
