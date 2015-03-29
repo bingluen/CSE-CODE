@@ -165,20 +165,15 @@ String& String::assign(char *first, char *last)
 {
 	// Copies the sequence of characters in the range [first,last), in the same order. Returns *this
 
-
-	//compare capacity and length(last - first), if length > capacity. reallocate
-	if (this->capacity < (unsigned)(last - first))
+	unsigned int length;
+	if ((length = (unsigned int)(last - first)) > strlen(first))
 	{
-		delete[] this->sPtr;
-		capacity = last - first;
-		this->sPtr = new char[capacity];
+		length = strlen(first);
 	}
+	this->resize(length);
 
 	//copy data
-	memcpy(this->sPtr, first, last - first);
-
-	//reset size
-	this->size = last - first;
+	memcpy(this->sPtr, first, length);
 
 	return *this;
 }
@@ -201,6 +196,7 @@ String& String::erase(unsigned int pos, unsigned int len)
 	//move character to erase
 	/*
 		use memcpy is more efficiently than memmove, but is not safe on follow case:
+		length = 11
 		index    0 1 2 3 4 5 6 7 8 9 10
 		sPtr = [ a b c d e f g h i j k ]
 					 |	   |
@@ -212,6 +208,9 @@ String& String::erase(unsigned int pos, unsigned int len)
 
 	//reset size
 	this->size -= length;
+
+	//clear memoery
+	memset(this->sPtr + this->size - 1, 0, this->capacity - this->size);
 
 	
 
@@ -245,10 +244,10 @@ char* String::erase(char *first, char *last)
 
 	*/
 
-	memmove(first, last, last - first);
+	memmove(first, last, last - first + 1);
 
 	//reset size
-	this->size -= last - first;
+	this->size -= last - first + 1;
 
 
 	return first;
@@ -279,9 +278,22 @@ String String::substr(unsigned int pos, unsigned int len) const
 	// (or until the end of the string, whichever comes first).
 
 	//check len is reasonable
+	
+	char *ptr;
+
 	if (len <= size - pos)
-		return *(new String(sPtr + pos, len));
+	{
+		ptr = new char[len + 1];
+		memcpy(ptr, sPtr + pos, len);
+		ptr[len + 1] = '\0';
+		return *(new String(ptr, len + 1));
+	} 
 	else
-		return *(new String(sPtr + pos, size - pos));
+	{
+		ptr = new char[size - pos + 1];
+		memcpy(ptr, sPtr + pos, size - pos);
+		ptr[size - pos + 1] = '\0';
+		return *(new String(ptr, size - pos + 1));
+	}
 
 }

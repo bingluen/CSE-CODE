@@ -25,9 +25,19 @@ const Identifier & Identifier::operator = (const String &right)
 {
 	// assignment operator
 
+	String::operator=(right);
+
+	return *this;
 }
 
 bool Identifier::keyword()
 {
 	// check if the current identifier is a C++ keyword
+	for (size_t i = 0; i < 61; i++)
+	{
+		if (!strcmp(this->begin(), keywords[i]))
+			return true;
+	}
+
+	return false;
 }

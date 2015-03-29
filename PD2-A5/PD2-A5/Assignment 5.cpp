@@ -32,12 +32,25 @@ int main()
       sourceLine.deleteComments(); // deletes the comment beginning with "//" in "sourceLine"
       sourceLine.deleteStringConstants(); // deletes all string constants in sourceLine
       sourceLine.deleteCharacterConstants(); // deletes all character constants in sourceLine
-
+	  /*
+	  cout << sourceLine << "\tbeginPos = " << beginPos << "\tendPos = " << endPos
+		  << " sourceLine size = " << sourceLine.getSize()
+		  << endl;
+	  cout << endl;
+	  */
       // find the begining and ending positions of the first identifier in a sourceLine
       while( sourceLine.findBeginEnd( beginPos, endPos ) )
       {
          identifiers[ ++numIdentifiers ] = sourceLine.substr( beginPos, endPos - beginPos );
          sourceLine.erase( 0, endPos );
+		 /*
+		 cout << "\t" << sourceLine << "\tbeginPos = " << beginPos << "\tendPos = " << endPos 
+			 << " sourceLine size = " << sourceLine.getSize()
+			 << endl;
+		 
+		 cout << "\t" << "numIdentifiers = " << numIdentifiers << "\t" << identifiers[numIdentifiers] << endl;
+		 cout << endl;
+		 */
       }
    }
 
