@@ -8,7 +8,7 @@ int direction[4][2] = {{0, -1}, {1, 0}, {0 ,1}, {-1, 0}};
 
 void loadMap(char * , char [2][20][20]);
 bool isSingleRoute(char [20][20], unsigned int[2]);
-int& findStartPoint(char [20][20]);
+int* findStartPoint(char [20][20]);
 
 
 int main(int argc, char* argv[])
@@ -22,8 +22,9 @@ int main(int argc, char* argv[])
 
 	char map [2][20][20];
 	loadMap(argv[1], map);
-	int &startPoint = (findStartPoint(map[0]));
-	cout << startPoint << endl;
+	int *startPoint = (findStartPoint(map[0]));
+	//cout << "row = " << startPoint[0] << " column = " << startPoint[1] << endl;
+
 
 	return 0;
 
@@ -41,21 +42,23 @@ void loadMap(char *filename, char map[2][20][20])
 
 	char input[20];
 	unsigned int row = 0;
-	while (mapFile.getline(input, 20))
+	while( mapFile.getline(input,21) )
 	{
-		cout << input << endl;
+		//cout << row;
 		if(strlen(input))
 		{
-			strcpy(map[0][row++], input);
+			//cout << " " << input;
+			strcpy(map[0][row], input);
 			strcpy(map[1][row++], input);
 		}
+		//cout << endl;
 	}
 
 	mapFile.close();
 }
 
 
-int &findStartPoint(char map[20][20])
+int* findStartPoint(char map[20][20])
 {
 	for(unsigned int i = 0; i < 20; i++)
 	{
@@ -66,7 +69,7 @@ int &findStartPoint(char map[20][20])
 				int *position = new int[2];
 				position[0] = i;
 				position[1] = j;
-				return *position;
+				return position;
 			}
 		}
 	}
