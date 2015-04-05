@@ -24,6 +24,7 @@ int main(int argc, char* argv[])
 	loadMap(argv[1], map);
 	int *startPoint = (findStartPoint(map[0]));
 	//cout << "row = " << startPoint[0] << " column = " << startPoint[1] << endl;
+	
 
 
 	return 0;
