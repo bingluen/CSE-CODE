@@ -36,22 +36,22 @@ HugeInteger< T >::~HugeInteger()
 {
 } // end HugeInteger< T > destructor
 
+
 // load a HugeInteger from a text file
 template< typename T >
-void HugeInteger< T >::load( ifstream &inFile )
+void HugeInteger< T >::load(ifstream &inFile)
 {
-   char digit;
-   while ( ( digit = inFile.get() ) != '\n' )
-      push_back( digit - '0' );
+	char digit;
+	while ((digit = inFile.get()) != '\n')
+		push_back((digit - '0') );
 
-   unsigned int size = getSize();
-   T temp;
-   for ( unsigned int i = 0; i <= ( size - 1 ) / 2; i++ )
-   {
-      temp = (*this)[ i ];
-      ( *this )[ i ] = ( *this )[ size - i - 1 ];
-      ( *this )[ size - i - 1 ] = temp;
-   }
+	T temp;
+	for (T *p1 = begin(), *p2 = end() - 1; p1 < p2; p1++, p2--)
+	{
+		temp = *p1;
+		*p1 = *p2;
+		*p2 = temp;
+	}
 }
 
 // overloaded assignment operator;
@@ -245,20 +245,24 @@ HugeInteger< T > HugeInteger< T >:: operator*(HugeInteger &op2)
 	//declare product
 	HugeInteger< T > product(this->getSize() + op2.getSize());
 
+	HugeInteger< T > zero(1);
+
+	if (op2.zero() || this->zero())
+		return zero;
 
 	//do product
 	for (T* pLeft = this->begin(); pLeft < this->end(); pLeft++)
 	{
 		for (T* pRight = op2.begin(); pRight < op2.end(); pRight++)
 		{
-			*(product.begin() + (pLeft - this->begin()) + (pRight - op2.begin())) = *pLeft * *pRight;
+			*(product.begin() + (pLeft - this->begin()) + (pRight - op2.begin())) = *(product.begin() + (pLeft - this->begin()) + (pRight - op2.begin())) + (*pLeft) * (*pRight);
 		}
 	}
 
 	//process carry
 	for (T* ptr = product.begin(); ptr < product.end(); ptr++)
 	{
-		if (*ptr > 10)
+		if (*ptr > 9)
 		{
 			*(ptr + 1) += *ptr / 10;
 			*ptr %= 10;
@@ -266,47 +270,11 @@ HugeInteger< T > HugeInteger< T >:: operator*(HugeInteger &op2)
 	}
 
 	//check size
-	for (T* ptr = product.end() - 1;
-		product.getSize() > 0 && !(*ptr);
-		product.resize(product.getSize() - 1));
+	if (*(product.end() - 1) == 0)
+		product.resize(product.getSize() - 1);
 
 	return product;
 }
-
-template < typename T >
-HugeInteger< T > HugeInteger< T >:: operator*(const HugeInteger &op2)
-{
-	//declare product
-	HugeInteger< T > product(this->getSize() + op2.getSize());
-
-
-	//do product
-	for (T* pLeft = this->begin(); pLeft < this->end(); pLeft++)
-	{
-		for (T* pRight = op2.begin(); pRight < op2.end(); pRight++)
-		{
-			*(product.begin() + (pLeft - this->begin()) + (pRight - op2.begin())) = *pLeft * *pRight;
-		}
-	}
-
-	//process carry
-	for (T* ptr = product.begin(); ptr < product.end(); ptr++)
-	{
-		if (*ptr > 10)
-		{
-			*(ptr + 1) += *ptr / 10;
-			*ptr %= 10;
-		}
-	}
-
-	//check size
-	for (T* ptr = product.end() - 1;
-		product.getSize() > 0 && !(*ptr);
-		product.resize(product.getSize() - 1));
-
-	return product;
-}
-
 // division operator; HugeInteger< T > / HugeInteger< T >
 template< typename T >
 HugeInteger< T > HugeInteger< T >::operator/(HugeInteger< T > &op2)
@@ -389,7 +357,7 @@ void HugeInteger< T >::shiftDigitLeft()
 }
 
 template < typename T >
-HugeInteger< T > HugeInteger< T >::doDivision(const HugeInteger< T > &right, bool getQuotient)
+HugeInteger< T > HugeInteger< T >::doDivision(HugeInteger< T > &right, bool getQuotient)
 {
 	HugeInteger< T > quotient(1), remainder(1);
 	ProductTable< T > table(right);
@@ -401,7 +369,7 @@ HugeInteger< T > HugeInteger< T >::doDivision(const HugeInteger< T > &right, boo
 		Left shift bit before put next bit
 		the first time or remainder is zero did not need
 		*/
-		if (ptr == this->end() - 1 && !remainder.zero())
+		if (ptr != this->end() - 1 && !remainder.zero())
 		{
 			remainder.shiftDigitLeft();
 		}
