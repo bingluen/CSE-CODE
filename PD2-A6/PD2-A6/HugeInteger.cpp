@@ -258,7 +258,10 @@ HugeInteger< T > HugeInteger< T >::operator-(HugeInteger< T > &op2)
 	}
 
 	//count size
-	for (T* ptr = difference.end(); *ptr == 0; difference.resize(difference.getSize() - 1));
+	while (*(difference.end() - 1) == 0)
+	{
+		difference.resize(difference.getSize() - 1);
+	}
 
 
 	return difference;
@@ -379,7 +382,8 @@ void HugeInteger< T >::shiftDigitLeft()
 	this->resize(this->getSize() + 1);
 
 	//shift data left
-	memmove(this->end() - 1, this->end() - 2, this->getSize() - 1);
+	for (T* ptr = this->end() - 1; ptr >= this->begin(); ptr--)
+		*ptr = *(ptr - 1);
 }
 
 template < typename T >
@@ -410,6 +414,7 @@ HugeInteger< T > HugeInteger< T >::doDivision(HugeInteger< T > &right, bool getQ
 		//do subtraction & get scalar
 		*(quotient.begin()) = table.getScalarForDivision(remainder);
 		remainder = remainder - table.getProduct(*(quotient.begin()));
+
 	}
 
 	if (getQuotient)
