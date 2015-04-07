@@ -94,7 +94,7 @@ bool Vector< T >::operator==(const Vector< T > &right) const
 		; p < this->end()
 		; p++, rP++)
 	{
-		if (*p == *rP)
+		if (*p != *rP)
 			return false;
 	}
 
@@ -142,6 +142,7 @@ void Vector< T >::resize(unsigned int n)
 	{
 		this->reserve(n);
 	}
+	
 	//init new element as 0
 	memset(this->end(), 0, this->capacity - this->getSize());
 
