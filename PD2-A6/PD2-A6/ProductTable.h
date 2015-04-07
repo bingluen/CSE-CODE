@@ -51,7 +51,7 @@ void ProductTable< T >::setBase(HugeInteger<T> &base)
 	{
 		this->table[i] = (*scalar) * base;
 		(*scalar)++;
-		cout << table[i] << endl;
+		//cout << table[i] << endl;
 	}
 
 
@@ -61,13 +61,14 @@ void ProductTable< T >::setBase(HugeInteger<T> &base)
 template < typename T >
 unsigned short ProductTable< T >::getScalarForDivision(const HugeInteger< T > &remainder)
 {
-	for (unsigned short i = 0; i < 10; i++)
+	unsigned short i;
+	for (i = 0; i <= 10; i++)
 	{
 		if (table[i] > remainder)
-			return --i;
+			break;
 	}
 
-	return 0;
+	return --i;
 }
 
 template < typename T >
