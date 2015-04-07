@@ -216,18 +216,44 @@ HugeInteger< T > HugeInteger< T >::operator-(HugeInteger< T > &op2)
 
 	HugeInteger< T > difference(*this);
 
+	bool doBorrow;
+
 	for (T* pRight = op2.begin(), *pDiff = difference.begin();
 		pRight < op2.end();
 		pRight++, pDiff++)
 	{
-			//do difference
-			*pDiff -= *pRight;
-			// if number < 0, borrow ten
-			while (*pDiff < 0)
-			{
-				*pDiff += 10;
-				*(pDiff + 1) -= 1;
-			}
+		/*
+		In order to slove unsigned int type bug,
+		change implement way
+		*/
+
+		//before do substract, compare digit
+		if (*pDiff < *pRight)
+			doBorrow = true;
+		else
+			doBorrow = false;
+
+		//if doBorrow is true, do it
+		if (doBorrow)
+		{
+			//record source which is been borrowed
+			unsigned int count = 1;
+
+			//count where borrowed source from
+			for (; *(pDiff + count) == 0; count++);
+
+			//borrow 10
+			*(pDiff + count) -= 1;
+
+			//the digit which higher than current digit plus 9
+			for (int i = count - 1; i > 0; i--)
+				*(pDiff + i) += 9;
+			//the current digit plus 10
+			*pDiff += 10;
+		}
+
+		//do difference
+		*pDiff -= *pRight;
 
 	}
 
