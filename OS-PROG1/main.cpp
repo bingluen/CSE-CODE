@@ -9,6 +9,7 @@ int direction[4][2] = {{0, -1}, {1, 0}, {0 ,1}, {-1, 0}};
 void loadMap(char * , char [2][20][20]);
 bool isSingleRoute(char [20][20], unsigned int[2]);
 int* findStartPoint(char [20][20]);
+void roobot();
 
 
 int main(int argc, char* argv[])
@@ -24,7 +25,8 @@ int main(int argc, char* argv[])
 	loadMap(argv[1], map);
 	int *startPoint = (findStartPoint(map[0]));
 	//cout << "row = " << startPoint[0] << " column = " << startPoint[1] << endl;
-	
+
+
 
 
 	return 0;
