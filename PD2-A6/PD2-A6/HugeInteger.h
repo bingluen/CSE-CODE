@@ -32,7 +32,6 @@ public:
    HugeInteger operator+( HugeInteger &op2 ); // addition operator; HugeInteger + HugeInteger
    HugeInteger operator-( HugeInteger &op2 ); // subtraction operator; HugeInteger - HugeInteger
    HugeInteger operator*( HugeInteger &op2 ); // multiplication operator; HugeInteger * HugeInteger
-   HugeInteger operator*( const HugeInteger &op2); // multiplication operator; HugeInteger * HugeInteger
    HugeInteger operator/( HugeInteger &op2 ); // division operator; HugeInteger / HugeInteger
    HugeInteger operator%( HugeInteger &op2 ); // modulus operator; HugeInteger % HugeInteger
    HugeInteger &operator++(); // prefix increment operator
@@ -44,7 +43,7 @@ private:
    void helpIncrement();             // increments a HugeInteger by 1
 
    void shiftDigitLeft();
-   HugeInteger doDivision(const HugeInteger &op2, bool getQuotient);
+   HugeInteger doDivision(HugeInteger &op2, bool getQuotient);
 }; // end class HugeInteger
 
 #endif

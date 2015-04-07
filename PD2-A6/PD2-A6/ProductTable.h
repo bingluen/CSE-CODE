@@ -9,10 +9,10 @@ public:
 	ProductTable();
 
 	//construct with table
-	ProductTable(const HugeInteger< T > &base);
+	ProductTable(HugeInteger< T > &base);
 
 	//set table base
-	void setBase(const HugeInteger< T > &base);
+	void setBase( HugeInteger< T > &base);
 
 	//get max scalar of base which less then or equal to remainder
 	unsigned short getScalarForDivision(const HugeInteger< T > &remainder);
@@ -38,20 +38,22 @@ ProductTable< T >::ProductTable()
 }
 
 template < typename T >
-ProductTable< T >::ProductTable(const HugeInteger<T> &base)
+ProductTable< T >::ProductTable(HugeInteger<T> &base)
 {
 	this->setBase(base);
 }
 
 template < typename T >
-void ProductTable< T >::setBase(const HugeInteger<T> &base)
+void ProductTable< T >::setBase(HugeInteger<T> &base)
 {
-	HugeInteger< T > scalar(1);
+	HugeInteger< T > *scalar = new HugeInteger<T>(1);
 	for (unsigned short i = 0; i < 10; i++)
 	{
-		this->table[i] = scalar * base;
-		scalar++;
+		this->table[i] = (*scalar) * base;
+		(*scalar)++;
+		cout << table[i] << endl;
 	}
+
 
 	this->available = true;
 }
