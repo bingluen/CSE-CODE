@@ -109,8 +109,12 @@ int getRouteNum(char map[20][20], struct Robot robot)
 	int count = 0;
 	for(size_t i = 0; i < 4; i++)
 	{
-		if(robot.pos_x + direction[i][0] < 20 && robot.pos_y + direction[i][1] < 20
+		if((robot.pos_x + direction[i][0] < 20 && robot.pos_y + direction[i][1] < 20
 			&& map[robot.pos_x + direction[i][0]][robot.pos_y + direction[i][1]] == ' ')
+			|| (robot.pos_x + direction[i][0] < 20 && robot.pos_y + direction[i][1] < 20
+			&& map[robot.pos_x + direction[i][0]][robot.pos_y + direction[i][1]] == 'k')
+			|| (robot.pos_x + direction[i][0] < 20 && robot.pos_y + direction[i][1] < 20
+			&& map[robot.pos_x + direction[i][0]][robot.pos_y + direction[i][1]] == 'K'))
         {
             count++;
         }
@@ -123,8 +127,12 @@ void getDirection(char map[20][20], struct Robot robot)
 {
 	for(size_t i = 0; i < 4; i++)
 	{
-		if(robot.pos_x + direction[i][0] < 20 && robot.pos_y + direction[i][1] < 20
+		if((robot.pos_x + direction[i][0] < 20 && robot.pos_y + direction[i][1] < 20
 			&& map[robot.pos_x + direction[i][0]][robot.pos_y + direction[i][1]] == ' ')
+			|| (robot.pos_x + direction[i][0] < 20 && robot.pos_y + direction[i][1] < 20
+			&& map[robot.pos_x + direction[i][0]][robot.pos_y + direction[i][1]] == 'k')
+			|| (robot.pos_x + direction[i][0] < 20 && robot.pos_y + direction[i][1] < 20
+			&& map[robot.pos_x + direction[i][0]][robot.pos_y + direction[i][1]] == 'K'))
         {
         	robot.direction = i;
         	break;
@@ -137,8 +145,12 @@ int getDirection(char map[20][20], int pos[])
 {
 	for(size_t i = 0; i < 4; i++)
 	{
-		if(pos[0] + direction[i][0] < 20 && pos[1] + direction[i][1]
+		if((pos[0] + direction[i][0] < 20 && pos[1] + direction[i][1] < 20
 			&& map[pos[0] + direction[i][0]][pos[1] + direction[i][1]] == ' ')
+			|| (pos[0] + direction[i][0] < 20 && pos[1] + direction[i][1] < 20
+			&& map[pos[0] + direction[i][0]][pos[1] + direction[i][1]] == 'k')
+			|| (pos[0] + direction[i][0] < 20 && pos[1] + direction[i][1] < 20
+			&& map[pos[0] + direction[i][0]][pos[1] + direction[i][1]] == 'K'))
         {
             return i;
         }
@@ -158,8 +170,12 @@ void getPassable(char map[20][20], bool passable[], int pos[])
 {
 	for(size_t i = 0; i < 4; i++)
 	{
-		if(pos[0] + direction[i][0] < 20 && pos[1] + direction[i][1]
+		if((pos[0] + direction[i][0] < 20 && pos[1] + direction[i][1] < 20
 			&& map[pos[0] + direction[i][0]][pos[1] + direction[i][1]] == ' ')
+			||(pos[0] + direction[i][0] < 20 && pos[1] + direction[i][1] < 20
+			&& map[pos[0] + direction[i][0]][pos[1] + direction[i][1]] == 'k')
+			|| (pos[0] + direction[i][0] < 20 && pos[1] + direction[i][1] < 20
+			&& map[pos[0] + direction[i][0]][pos[1] + direction[i][1]] == 'K'))
         {
         	passable[i] = true;
         }
@@ -194,7 +210,7 @@ void explore()
 	int numRoute = getRouteNum(map, robot);
 
 
-	while(!(isFound = isOrePosition(map, robot)) && robot.pos_x < 20 && robot.pos_y < 20)
+	while( map[robot.pos_x][robot.pos_y] != '*' && !(isFound = isOrePosition(map, robot)) && robot.pos_x < 20 && robot.pos_y < 20)
 	{
 		if(pid == 0)
 		{	
@@ -206,11 +222,12 @@ void explore()
 			{
 				//cout << getpid() << "要從 (" << robot.pos_x << ", " << robot.pos_y << ") 前進了" << endl;
 				//cout << getpid() << "方向是 (" << direction[robot.direction][0] << ", " << direction[robot.direction][1] << ")" << endl;
-				//變牆壁
-				map[robot.pos_x][robot.pos_y] = '*';
+				//變牆壁，若是礦石就不要變成牆壁XD
+				if(!(map[robot.pos_x][robot.pos_y] == 'k' || map[robot.pos_x][robot.pos_y] == 'K'))
+					map[robot.pos_x][robot.pos_y] = '*';
 				robot.pos_x += direction[robot.direction][0];
 				robot.pos_y += direction[robot.direction][1];
-				//cout << getpid() << "到達了 (" << robot.pos_x << ", " << robot.pos_y <<")" << endl;
+				cout << "\t" << getpid() << "到達了 (" << robot.pos_x << ", " << robot.pos_y <<")  這裡樣子是 = \""<< map[robot.pos_x][robot.pos_y] << "\" 所以 isFound = " << isFound << endl;
 				//刷新方向
 				int point[2];
 				point[0] = robot.pos_x;
@@ -230,6 +247,8 @@ void explore()
 			else if( numRoute > 1)
 			{
 				//把現在也設定為牆壁
+				cout << endl;
+				cout << endl;
 				cout << "[FORK] " << getpid() << " in (" << robot.pos_x << ", " << robot.pos_y << ")!" << endl;
 				map[robot.pos_x][robot.pos_y] = '*';
 				//cout << "要生孩子囉" << endl;
@@ -276,6 +295,7 @@ void createRobot(struct Robot &monther, int dir)
 	else if ( pid == 0 ) { // create odd numbers of child process (a half of full binary tree)
 		monther.pos_x += direction[dir][0];
 		monther.pos_y += direction[dir][1];
+		monther.direction = dir;
 	}
 
 	
