@@ -218,7 +218,7 @@ void explore()
 
 			//設定共享記憶體
 			passable = (bool *)shmat(shm_id,0,0);
-			while( (numRoute = getRouteNum(map, robot)) == 1 && !(isFound = isOrePosition(map, robot)) )
+			while( (numRoute = getRouteNum(map, robot)) == 1 && !(isFound) )
 			{
 				//cout << getpid() << "要從 (" << robot.pos_x << ", " << robot.pos_y << ") 前進了" << endl;
 				//cout << getpid() << "方向是 (" << direction[robot.direction][0] << ", " << direction[robot.direction][1] << ")" << endl;
@@ -227,6 +227,7 @@ void explore()
 					map[robot.pos_x][robot.pos_y] = '*';
 				robot.pos_x += direction[robot.direction][0];
 				robot.pos_y += direction[robot.direction][1];
+				isFound = isOrePosition(map, robot);
 				cout << "\t" << getpid() << "到達了 (" << robot.pos_x << ", " << robot.pos_y <<")  這裡樣子是 = \""<< map[robot.pos_x][robot.pos_y] << "\" 所以 isFound = " << isFound << endl;
 				//刷新方向
 				int point[2];
@@ -240,7 +241,14 @@ void explore()
 			if( numRoute == 0)
 			{
 				//沒路了
-				cout << getpid() << " (" << robot.pos_x << ", " << robot.pos_y << ") None!" << endl;
+				if(isFound)
+				{
+					cout << getpid() << " (" << robot.pos_x << ", " << robot.pos_y << ") Found!" << endl;
+				}
+				else
+				{
+					cout << getpid() << " (" << robot.pos_x << ", " << robot.pos_y << ") None!" << endl;
+				}
 				exit(0);
 			}
 
