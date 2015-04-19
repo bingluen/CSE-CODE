@@ -31,9 +31,9 @@ public:
    // subscript operator for const objects returns rvalue
    T operator[]( unsigned int ) const;
 
-   iterator begin(); // Returns a pointer pointing to the first element in the vector.
+   iterator begin() const; // Returns a pointer pointing to the first element in the vector.
                  // If the container is empty, the returned pointer shall not be dereferenced.
-   iterator end(); // Returns an pointer referring to the past-the-end element in the vector container.
+   iterator end() const; // Returns an pointer referring to the past-the-end element in the vector container.
                // The past-the-end element is the theoretical element that would follow the last element in the vector.
                // It does not point to any element, and thus shall not be dereferenced.
                // If the container is empty, the returned pointer shall not be dereferenced. 

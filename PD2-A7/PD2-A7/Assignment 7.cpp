@@ -102,7 +102,7 @@ void loadTwoHugeIntegers( HugeInteger< T > &n1, HugeInteger< T > &n2 )
    }
 
    n1.load( inFile );
-//   n2.load( inFile );
+   n2.load( inFile );
 
    inFile.close();
 }

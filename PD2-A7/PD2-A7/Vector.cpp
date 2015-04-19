@@ -21,13 +21,13 @@ Vector< T >::~Vector()
 }
 
 template< typename T >
-Iterator< T > Vector< T >::begin()
+Iterator< T > Vector< T >::begin() const
 {
    return Iterator< T >( ptr );
 }
 
 template< typename T >
-Iterator< T > Vector< T >::end()
+Iterator< T > Vector< T >::end() const
 {
    return Iterator< T >( ptr + size );
 }
@@ -75,10 +75,8 @@ Vector< T >::Vector(const Vector< T > &vectorToCopy)
 		it < this->end();
 		it++, itR++)
 	{
-		*it = *itr;
+		*it = *itR;
 	}
-
-	return *this;
 }
 
 template < typename T >
@@ -86,18 +84,20 @@ const Vector< T > &Vector< T >::operator=(const Vector< T > &right)
 {
 	// assignment operator
 	//compare size, if this->size < vectorToCopy.size, resize this
-	if (this->getSize() < vectorToCopy.getSize())
+	if (this->getSize() < right.getSize())
 	{
-		this->resize(vectorToCopy.getSize());
+		this->resize(right.getSize());
 	}
 
 	//copy data
-	for (iterator it = this->begin(), itR = vectorToCopy.begin();
+	for (iterator it = this->begin(), itR = right.begin();
 		it < this->end();
 		it++, itR++)
 	{
-		*it = *itr;
+		*it = *itR;
 	}
+
+	this->size = right.getSize();
 
 	return *this;
 }
@@ -179,13 +179,15 @@ void Vector< T >::reserve(unsigned int n)
 
 	if (n > this->capacity)
 	{
-		T* tempPtr = this->begin();
+		iterator tempPtr = this->begin();
 		this->capacity = n;
 		this->ptr = new T[n];
 		
 		//copy data
-		memcpy(this->ptr, tempPtr, this->size * sizeof(T));
+		for (iterator it = this->begin(), itR = tempPtr; itR < tempPtr + this->getSize(); it++, itR++)
+			*it = *itR;
+		//memcpy(this->ptr, tempPtr, this->size * sizeof(T));
 
-		delete[]tempPtr;
+		delete[]&(*tempPtr);
 	}
 }

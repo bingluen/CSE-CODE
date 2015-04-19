@@ -34,6 +34,7 @@ private:
    HugeInteger( unsigned int size ); // constructor
    void divideByTen();               // divides a HugeInteger by 10
    void helpIncrement();             // increments a HugeInteger by 1
+   void tenfold();
 }; // end class HugeInteger
 
 #endif
