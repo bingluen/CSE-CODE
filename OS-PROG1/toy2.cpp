@@ -74,8 +74,15 @@ short int direction[4][2] = {{0, -1}, {1, 0}, {0 ,1}, {-1, 0}};
 int map_shm_id = 0;
 int passableDirection_shm_id = 0;
 
+//main pid
+pid_t mainPid;
+
 int main(int argc, char* argv[])
 {
+	struct timespec begin, end;
+	double timeCost = 0;
+	 mainPid = getpid();
+	clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &begin); // get begin time 
 
 	if(argc <= 1)
 	{
@@ -89,16 +96,17 @@ int main(int argc, char* argv[])
 
 	printMap();	
 
-	cout << "[Main pid = "<< getpid() <<"] Set map data to shared." << endl;
+	//cout << "[Main pid = "<< getpid() <<"] Set map data to shared." << endl;
 
-	map_shm_id = shmget(IPC_PRIVATE,sizeof(short int)*22*22,IPC_CREAT|0666);
+	//map_shm_id = shmget(IPC_PRIVATE,sizeof(short int)*22*22,IPC_CREAT|0666);
 
-	cout << "[Main pid = "<< getpid() <<"] Set passable direction record data to shared." << endl;
+	//cout << "[Main pid = "<< getpid() <<"] Set passable direction record data to shared." << endl;
 
-	passableDirection_shm_id = shmget(IPC_PRIVATE,sizeof(passableDirection),IPC_CREAT|0666);
+	//passableDirection_shm_id = shmget(IPC_PRIVATE,sizeof(passableDirection),IPC_CREAT|0666);
 
-	/* test */
+	/* test
 	cout << "[Debug !!] Share memory Size:\t passableDirection = " << sizeof(passableDirection) << "\tmap = " << sizeof(map) << endl;
+	*/
 
 	cout << "[Main pid = "<< getpid() <<"] Finding starting point." << endl;
 
@@ -109,6 +117,11 @@ int main(int argc, char* argv[])
 	explore();
 
 	//printMap();
+
+	clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &end); // get begin time 
+
+	timeCost = end.tv_sec - begin.tv_sec;
+	cout << "總執行時間：" << timeCost << endl;
 
 	return 0;
 }
@@ -205,6 +218,7 @@ void printMap()
 void explore()
 {
 	//print first robot info.
+	//cout << "[pid = " << getpid() << " Parent = " << getppid() << "]: (" << robot.pos.x << ", " << robot.pos.y << ")" << endl;
 	cout << "[pid = " << getpid() << "]: (" << robot.pos.x << ", " << robot.pos.y << ")" << endl;
 
 	pid_t pid = 0;
@@ -247,9 +261,10 @@ void explore()
 			    robot.pos.x += direction[robot.direction][0];
 			    robot.pos.y += direction[robot.direction][1];
 
-			    /* test */
-			    //cout << "[!!Debug!!] pid = " << getpid() << " Parent = " << getppid() << " 移動到 (" << robot.pos.x << ", " << robot.pos.y << ")" << endl;
-
+			    /* test
+			    cout << "\t pid = " << getpid() << " Parent = " << getppid() << " 移動到 (" << robot.pos.x << ", " << robot.pos.y << ")" << endl;
+				*/
+			
 			    //isFound ?
 			    isNotFound = !(isOre(robot.pos.x, robot.pos.y));
 
@@ -319,24 +334,24 @@ void explore()
 
 				//cout << "[DEBUG!!!] 剩餘child數目" << childNum << endl;
 
-				if(status == 1)
+				if(status == 256)
 				{
 					isNotFound = false;
 				}
-
-				if(!isNotFound)
-				/*
-				{
-					cout << getpid() << " (" << robot.pos.x << ", " << robot.pos.y << ") None!" << endl;
-				}
-				else
-				*/
-				{
-					cout << getpid() << " (" << robot.pos.x << ", " << robot.pos.y << ") Found!" << endl;
-				}
 			}
 			
-			return;
+
+			if(isNotFound)
+			{
+				if(getpid() != mainPid)
+					exit(0);
+			}
+			else
+			{
+				cout << getpid() << " (" << robot.pos.x << ", " << robot.pos.y << ") Found!" << endl;
+				if(getpid() != mainPid)
+					exit(1);
+			}
 		}
 		else
 		{
@@ -353,13 +368,15 @@ void explore()
 		/* test
 		cout << "[!!Debug!!]目前地圖，視角 process " << getpid() << endl;
 		printMap();
-		cout << "[!!debug!!]address of passableDirection = " << passableDirection << endl;
+		cout << "[!!debug!!]address of passableDirection = " << passableDirection << endl;*/
+		if(getpid() == mainPid)
+			printMap();
 		cout << endl;
 		cout << endl;
-		*/
+		
 		shmdt(map);
 		shmdt(passableDirection);
-		sleep(10);
+		sleep(5);
 	}
 
 
@@ -376,14 +393,15 @@ int createRobot(short int dir)
 	}
 	else if( pid == 0)
 	{
+		//cout << "[pid = " << getpid() << " Parent = " << getppid() << "]: (" << robot.pos.x << ", " << robot.pos.y << ")" << endl;
 		cout << "[pid = " << getpid() << "]: (" << robot.pos.x << ", " << robot.pos.y << ")" << endl;
 		robot.pos.x += direction[dir][0];
 		robot.pos.y += direction[dir][1];
 		robot.direction = dir;
 
 		//set memory share
-		/*passableDirection = (bool *)*/shmat(passableDirection_shm_id, passableDirection, 0);
-		/*map = (short int (*)[22])*/shmat(map_shm_id, map, 0);	
+		/*passableDirection = (bool *)shmat(passableDirection_shm_id, passableDirection, 0);*/
+		//map = (short int (*)[22])shmat(map_shm_id, 0, 0);	
 
 		/* test 
 		cout << "[Debug !!] Share memory Size:\t passableDirection = " << sizeof(passableDirection) << "\tmap = " << sizeof(map) << endl;
