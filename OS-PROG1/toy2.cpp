@@ -63,7 +63,7 @@ struct Robot
 /* Data */
 
 //map data
-short int (*map)[22] = new short int[22][22];
+short int (*map)[22];
 bool *passableDirection = new bool [4];
 unsigned int row = 0;
 
@@ -81,7 +81,7 @@ int main(int argc, char* argv[])
 {
 	struct timespec begin, end;
 	double timeCost = 0;
-	 mainPid = getpid();
+	mainPid = getpid();
 	clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &begin); // get begin time 
 
 	if(argc <= 1)
@@ -90,19 +90,15 @@ int main(int argc, char* argv[])
 		exit(1);
 	}
 
+	cout << "[Main pid = "<< getpid() <<"] Set map data to shared." << endl;
+
+	map_shm_id = shmget(IPC_PRIVATE,sizeof(short int)*22*22,IPC_CREAT|0666);
+
 	loadMap(argv[1], map);
 
 	cout << "[Main pid = "<< getpid() <<"] map loading successful!" << endl;
 
-	printMap();	
-
-	//cout << "[Main pid = "<< getpid() <<"] Set map data to shared." << endl;
-
-	//map_shm_id = shmget(IPC_PRIVATE,sizeof(short int)*22*22,IPC_CREAT|0666);
-
-	//cout << "[Main pid = "<< getpid() <<"] Set passable direction record data to shared." << endl;
-
-	//passableDirection_shm_id = shmget(IPC_PRIVATE,sizeof(passableDirection),IPC_CREAT|0666);
+	printMap();
 
 	/* test
 	cout << "[Debug !!] Share memory Size:\t passableDirection = " << sizeof(passableDirection) << "\tmap = " << sizeof(map) << endl;
@@ -116,8 +112,6 @@ int main(int argc, char* argv[])
 
 	explore();
 
-	//printMap();
-
 	clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &end); // get begin time 
 
 	timeCost = end.tv_sec - begin.tv_sec;
@@ -128,6 +122,8 @@ int main(int argc, char* argv[])
 
 void loadMap(char *filename, short int (*map)[22])
 {
+	map = (short int (*)[22])shmat(map_shm_id, 0, 0);
+
 	ifstream mapFile(filename, ios::in);
 
 	if ( !mapFile )
@@ -163,6 +159,8 @@ void loadMap(char *filename, short int (*map)[22])
 		map[row][i] = MAP_MARGIN;
 	
 	row++;
+
+	shmdt(map);
 }
 
 short int encodeMapSymbol(char symbol)
@@ -201,6 +199,9 @@ char encodeMapSymbol(short int code)
 
 void printMap()
 {
+
+	map = (short int (*)[22])shmat(map_shm_id, 0, 0);
+
 	/* 不要在多process時執行，會印歪。 */
 	cout << "     \t0123456789012345678901" << endl;
 	for(size_t i = 0; i < row; i++)
@@ -213,6 +214,8 @@ void printMap()
 		cout << "\tAddress = " << &map[i];
 		cout << endl;
 	}
+
+	shmdt(map);
 }
 
 void explore()
@@ -237,15 +240,17 @@ void explore()
 	*/
 	while(isNotFinish())
 	{
-		/* test 
-		cout << "[DEBUG!!!]現在process是" << getpid() << "路線有" << numRoute << "條" << endl;*/
-		
+
+		/* test
+		cout << "[DEBUG!!!]現在process是" << getpid() << "路線有" << numRoute << "條" << endl;
+		*/
+
 		if(pid == 0)
 		{
 			/* test
 			cout << "[DEBUG!!!]現在process是" << getpid() << "路線有" << numRoute << "條" << endl;
 			*/
-			
+				
 
 			while( isNotFound && (numRoute = getNumRoute()) == 1 )
 			{
@@ -253,9 +258,10 @@ void explore()
 			    /* test 
 			    cout << "[DEBUG!!!] [process = " << getpid() << " Parent = " << getppid() << "]路線有" << numRoute << "條" << endl;
 				*/
-			
+				
 			    //Find direction to going
 			    robot.direction = getDirection();
+
 
 			    //going
 			    robot.pos.x += direction[robot.direction][0];
@@ -268,12 +274,16 @@ void explore()
 			    //isFound ?
 			    isNotFound = !(isOre(robot.pos.x, robot.pos.y));
 
+			    map = (short int (*)[22])shmat(map_shm_id, 0, 0);
 			    //set to wall
 			    if(isNotFound)
 			    {
 			    	map[robot.pos.x][robot.pos.y] = MAP_WALL;
 			    }
+			    shmdt(map);
 			}
+
+			
 
 			//cout << "[!!Debug!!] pid = " << getpid() << " Parent = " << getppid() << " 離開迴圈了" << endl;
 
@@ -286,7 +296,12 @@ void explore()
 			else if(numRoute > 1)
 			{
 				pid = getpid();
+
+				map = (short int (*)[22])shmat(map_shm_id, 0, 0);	
+
 				refreshPassableDirection(passableDirection);
+
+				shmdt(map);
 
 				/* debug 
 				cout << "可正常執行到這" << endl;*/
@@ -312,8 +327,8 @@ void explore()
 			}
 			else
 			{
-				shmdt(map);
-				shmdt(passableDirection);
+
+				
 				cout << getpid() << " (" << robot.pos.x << ", " << robot.pos.y << ") None!" << endl;
 				exit(0);
 			}
@@ -325,8 +340,8 @@ void explore()
 		{
 			while( (child_pid = wait(&status)) != -1 )
 			{
-				//cout << "[DEBUG!!]目前 childe 數目 " << childNum << endl;
-				//cout << "[DEBUG!!!]process " << child_pid << " 被結束了，狀態為 " << status << endl;
+				cout << "[DEBUG!!]目前 childe 數目 " << childNum << endl;
+				cout << "[DEBUG!!!]process " << child_pid << " 被結束了，狀態為 " << status << endl;
 				if(isChild(childPids, child_pid, childNum))
 				{
 					childNum--;
@@ -369,13 +384,11 @@ void explore()
 		cout << "[!!Debug!!]目前地圖，視角 process " << getpid() << endl;
 		printMap();
 		cout << "[!!debug!!]address of passableDirection = " << passableDirection << endl;*/
-		if(getpid() == mainPid)
-			printMap();
+		/*if(getpid() == mainPid)
+			printMap();*/
 		cout << endl;
 		cout << endl;
 		
-		shmdt(map);
-		shmdt(passableDirection);
 		sleep(5);
 	}
 
@@ -401,18 +414,17 @@ int createRobot(short int dir)
 
 		//set memory share
 		/*passableDirection = (bool *)shmat(passableDirection_shm_id, passableDirection, 0);*/
-		//map = (short int (*)[22])shmat(map_shm_id, 0, 0);	
 
 		/* test 
 		cout << "[Debug !!] Share memory Size:\t passableDirection = " << sizeof(passableDirection) << "\tmap = " << sizeof(map) << endl;
 		*/
 		
-		//printMap();
+		printMap();
 
 		//把parent關起來
 		map[robot.pos.x][robot.pos.y] = MAP_WALL;
 	}
-
+	sleep(1);
 	return pid;
 }
 
@@ -446,23 +458,42 @@ void refreshPassableDirection(bool* passableDirection)
 
 bool isPassable(short int x, short int y)
 {
+	/* TEST 
+	cout << "可以進入isPassable()" << endl;*/
+	map = (short int (*)[22])shmat(map_shm_id, 0, 0);
 	if(x < 1 || y < 1 || x > 20 || y > 20 )
+	{
+		shmdt(map);
 		return false;
+	}
 
 	if(map[x][y] == MAP_ROAD || map[x][y] == MAP_ORE)
+	{
+		shmdt(map);
 		return true;
+	}
 
+	shmdt(map);
 	return false;
 }
 
 bool isOre(short int x, short int y)
 {
+	map = (short int (*)[22])shmat(map_shm_id, 0, 0);
 	if(x < 1 || y < 1 || x > 20 || y > 20 )
+	{
+		shmdt(map);
 		return false;
+	}
 
+	map = (short int (*)[22])shmat(map_shm_id, 0, 0);
 	if(map[x][y] == MAP_ORE)
+	{
+		shmdt(map);
 		return true;
-
+	}
+		
+	shmdt(map);
 	return false;
 }
 
@@ -479,6 +510,7 @@ int getDirection()
 
 void findStartingPoint(struct Position &pos)
 {
+	map = (short int (*)[22])shmat(map_shm_id, 0, 0);
 	for(size_t i = 0; i < 22; i++)
 	{
 		for(size_t j = 0; j < 22; j++)
@@ -487,6 +519,7 @@ void findStartingPoint(struct Position &pos)
 			{
 				pos.x = i;
 				pos.y = j;
+				shmdt(map);
 				return;
 			}
 		}
@@ -508,14 +541,20 @@ bool isChild(int childPids[], int pid, int childNum)
 
 bool isNotFinish()
 {
+	map = (short int (*)[22])shmat(map_shm_id, 0, 0);
 	for(size_t i = 1; i < 21; i++)
 	{
 		for(size_t j = 1; j < 21; j++)
 		{
 			if(map[i][j] == MAP_ROAD)
+			{
+				shmdt(map);
 				return true;
+			}
+				
 		}
 	}
 
+	shmdt(map);
 	return false;
 }
