@@ -83,6 +83,7 @@ int main(int argc, char* argv[])
 	double timeCost = 0;
 	mainPid = getpid();
 	clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &begin); // get begin time 
+	//cout << "開始時間：" << begin.tv_nsec << endl;
 
 	if(argc <= 1)
 	{
@@ -114,8 +115,9 @@ int main(int argc, char* argv[])
 
 	clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &end); // get begin time 
 
-	timeCost = end.tv_sec - begin.tv_sec;
-	cout << "總執行時間：" << timeCost << endl;
+	timeCost = ( end.tv_nsec - begin.tv_nsec ) / 1000.0 / 1000.0;
+	//cout << "結束時間：" << end.tv_nsec << endl;
+	cout << "總執行時間：" << timeCost << "ms" << endl;
 
 	return 0;
 }
@@ -280,6 +282,8 @@ void explore()
 			    {
 			    	map[robot.pos.x][robot.pos.y] = MAP_WALL;
 			    }
+			    printMap();
+			    sleep(1);
 			    shmdt(map);
 			}
 
@@ -340,8 +344,8 @@ void explore()
 		{
 			while( (child_pid = wait(&status)) != -1 )
 			{
-				cout << "[DEBUG!!]目前 childe 數目 " << childNum << endl;
-				cout << "[DEBUG!!!]process " << child_pid << " 被結束了，狀態為 " << status << endl;
+				//cout << "[DEBUG!!]目前 childe 數目 " << childNum << endl;
+				//cout << "[DEBUG!!!]process " << child_pid << " 被結束了，狀態為 " << status << endl;
 				if(isChild(childPids, child_pid, childNum))
 				{
 					childNum--;
@@ -419,12 +423,14 @@ int createRobot(short int dir)
 		cout << "[Debug !!] Share memory Size:\t passableDirection = " << sizeof(passableDirection) << "\tmap = " << sizeof(map) << endl;
 		*/
 		
-		printMap();
+		//printMap();
 
 		//把parent關起來
+		map = (short int (*)[22])shmat(map_shm_id, 0, 0);
 		map[robot.pos.x][robot.pos.y] = MAP_WALL;
+		shmdt(map);
 	}
-	sleep(1);
+	//sleep(1);
 	return pid;
 }
 
