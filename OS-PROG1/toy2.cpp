@@ -117,7 +117,7 @@ int main(int argc, char* argv[])
 
 	timeCost = ( end.tv_nsec - begin.tv_nsec ) / 1000.0 / 1000.0;
 	//cout << "結束時間：" << end.tv_nsec << endl;
-	cout << "總執行時間：" << timeCost << "ms" << endl;
+	cout << "pid = " << getpid() <<  " 總執行時間：" << timeCost << "ms" << endl;
 
 	return 0;
 }
@@ -282,8 +282,8 @@ void explore()
 			    {
 			    	map[robot.pos.x][robot.pos.y] = MAP_WALL;
 			    }
-			    printMap();
-			    sleep(1);
+			    //printMap();
+			    //sleep(1);
 			    shmdt(map);
 			}
 
@@ -355,6 +355,7 @@ void explore()
 
 				if(status == 256)
 				{
+					cout << getpid() << " (" << robot.pos.x << ", " << robot.pos.y << ") Found!" << endl;
 					isNotFound = false;
 				}
 			}
@@ -367,7 +368,6 @@ void explore()
 			}
 			else
 			{
-				cout << getpid() << " (" << robot.pos.x << ", " << robot.pos.y << ") Found!" << endl;
 				if(getpid() != mainPid)
 					exit(1);
 			}
@@ -389,10 +389,10 @@ void explore()
 		printMap();
 		cout << "[!!debug!!]address of passableDirection = " << passableDirection << endl;*/
 		/*if(getpid() == mainPid)
-			printMap();*/
+			printMap();
 		cout << endl;
 		cout << endl;
-		
+		*/
 		sleep(5);
 	}
 
