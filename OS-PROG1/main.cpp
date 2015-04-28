@@ -1,3 +1,17 @@
+/*
+* 地圖定義
+* 牆壁 = 0
+* 活路 = 1
+* 礦源 = 2
+* 起點 = -1
+*/
+
+#define MAP_WALL 0
+#define MAP_ROAD 1
+#define MAP_ORE 2
+#define MAP_START 3
+#define MAP_MARGIN 4
+
 #include <iostream>
 #include <fstream>
 #include <string.h>
@@ -7,302 +21,567 @@
 #include <sys/wait.h>
 #include <sys/types.h>
 #include <sys/time.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
 
 using namespace std;
 
-void loadMap(char *,char [20][20]);
-void findStartPoint(char *[20], int*);
-
-int createRobot(struct Robot robot, int direction);
-
-int getRouteNum(char map[20][20], struct Robot robot);
-
-void getDirection(char map[20][20], struct Robot robot);
-int getDirection(char map[20][20], int pos[]);
-void getPassable(char map[20][20], bool passable[], int pos[]);
-
-bool isOrePosition(char map[20][20], struct Robot robot);
-
+/* main component */
+void loadMap(char *filename, short int(*map)[22]);
+short int encodeMapSymbol(char);
+char decodeMapSymbol(short int);
 void explore();
+void findStartingPoint(struct Position&);
+int createRobot(short int dir);
+int getNumRoute();
+int getDirection();
+void refreshPassableDirection(bool* passableDirection);
+bool isPassable(short int, short int);
+bool isOre(short int, short int);
+bool isChild(int[], int, int);
+bool isNotFinish();
 
-struct Robot
+/* debug tool */
+void printMap();
+
+/* Data Structure */
+
+//position
+struct Position
 {
-	int pos_x;
-	int pos_y;
-	int direction;
-	bool isFound;
+	short int x;
+	short int y;
 };
 
-//direction of robot
-int direction[4][2] = {{0, -1}, {1, 0}, {0 ,1}, {-1, 0}};
+//robot
+struct Robot
+{
+	struct Position pos;
+	short int direction;
+}robot;
 
-int fd[2], nbytes;
-char tubeBuffer[80];
+/* Data */
 
-char map[20][20];
+//map data
+short int(*map)[22];
+bool *passableDirection = new bool[4];
+unsigned int row = 0;
 
-//count process num;
-int countProcess;
+/* Direction const */
+short int direction[4][2] = { { 0, -1 }, { 1, 0 }, { 0, 1 }, { -1, 0 } };
+
+//shared memory setting
+int map_shm_id = 0;
+int passableDirection_shm_id = 0;
+
+//main pid
+pid_t mainPid;
 
 int main(int argc, char* argv[])
 {
-	if(argc <= 1)
+	struct timespec begin, end;
+	double timeCost = 0;
+
+	//紀錄Root process的pid
+	mainPid = getpid();
+
+	// get begin time 
+	clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &begin); 
+
+	if (argc <= 1)
 	{
-		cout << "Please assign a map." << endl;
+		cerr << "Please assignment map data file." << endl;
 		exit(1);
 	}
 
-	pipe(fd);
+	/* set shared memory */
+	map_shm_id = shmget(IPC_PRIVATE, sizeof(short int)* 22 * 22, IPC_CREAT | 0666);
 
+	/* load map */
 	loadMap(argv[1], map);
-	/* Test */
-	cout << "map load successful! " << endl;
 
-	cout << "Main process pid = " << getpid() << endl;
+	/* Find starting point */
+	findStartingPoint(robot.pos);
 
+	/* start to explore */
 	explore();
+
+	/* get begin time  */
+	clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &end);
+
+	/* Nanosecond to millisecond */
+	timeCost = (end.tv_nsec - begin.tv_nsec) / 1000.0 / 1000.0;
+	
+	cout << "總執行時間：" << timeCost << " ms" << endl;
 
 	return 0;
 }
 
-void loadMap(char *filename, char map[20][20])
+void loadMap(char *filename, short int(*map)[22])
 {
+	/* 
+		取得map所使用的shared memory位址
+		呼叫shmat後，該block會被呼叫的process鎖定
+	*/
+	map = (short int(*)[22])shmat(map_shm_id, 0, 0);
+
 	ifstream mapFile(filename, ios::in);
 
-	if ( !mapFile )
+	if (!mapFile)
 	{
-		cout << "File could not be opened" << endl;
-		exit( 1 );
+		cout << "File could not be opened." << endl;
+		exit(1);
 	}
 
+	//load file
 	char input[20];
-	unsigned int row = 0;
-	while( mapFile.getline(input, 21, '\n') )
+
+	//set top wall
+	for (size_t i = 0; i < 22; i++)
+		map[row][i] = MAP_MARGIN;
+
+	row++;
+
+	//load map
+	while (mapFile.getline(input, 21, '\n'))
 	{
-		if(strlen(input))
+		//set left wall
+		map[row][0] = MAP_MARGIN;
+		for (size_t i = 1; i < 22; i++)
 		{
-+			strcpy(map[row++], input);
+			map[row][i] = encodeMapSymbol(input[i - 1]);
 		}
+		//set right wall
+		map[row++][21] = MAP_MARGIN;
 	}
 
-	mapFile.close();
+	//set bottom wall
+	for (size_t i = 0; i < 22; i++)
+		map[row][i] = MAP_MARGIN;
+
+	row++;
+
+	/* 
+		解開map的存取，避免被process鎖定
+	*/
+	shmdt(map);
 }
 
-void findStartPoint(char map[20][20], int* position)
+/*
+	將讀入的地圖資料轉換為數值來儲存
+*/
+short int encodeMapSymbol(char symbol)
 {
-	for(unsigned int i = 0; i < 20; i++)
+	switch (symbol)
 	{
-		for(unsigned int j = 0; j < 20; j++)
+	case ' ':
+		return MAP_ROAD;
+	case 'k':
+	case 'K':
+		return MAP_ORE;
+	case 's':
+	case 'S':
+		return MAP_START;
+	case '*':
+		return MAP_WALL;
+	}
+}
+
+
+/*
+	為了印出地圖，將資料轉回文字
+*/
+char decodeMapSymbol(short int code)
+{
+	switch (code)
+	{
+	case MAP_ROAD:
+		return ' ';
+	case MAP_ORE:
+		return 'K';
+	case MAP_START:
+		return 'S';
+	case MAP_WALL:
+		return '*';
+	case MAP_MARGIN:
+		return '#';
+	}
+}
+
+void printMap()
+{
+
+	/* 
+		取得map所使用的shared memory位址
+		呼叫shmat後，該block會被呼叫的process鎖定
+	*/
+	map = (short int(*)[22])shmat(map_shm_id, 0, 0);
+
+	/* 盡量不要在多process時執行，容易印歪。 */
+	cout << "     \t 012345678901234567890" << endl;
+	for (size_t i = 0; i < row; i++)
+	{
+		if(i > 0 && i < row - 1)
+			cout << "i = " << i - 1 << "\t";
+		else
+			cout << "     \t";
+		for (size_t j = 0; j < 22; j++)
 		{
-			if(map[i][j] == 'S' || map[i][j] == 's')
+			cout << decodeMapSymbol(map[i][j]);
+		}
+		if(i > 0 && i < row - 1)
+			cout << "\tAddress = " << &map[i];
+		cout << endl;
+	}
+
+	/* 
+		解開map的存取，避免被process鎖定
+	*/
+	shmdt(map);
+}
+
+void explore()
+{
+	
+	cout << "[pid = " << getpid() << "]: (" << robot.pos.x - 1 << ", " << robot.pos.y - 1 << ")" << endl;
+
+	pid_t pid = 0;
+
+	bool isNotFound = true;
+	int numRoute = getNumRoute();
+	int status;
+
+	int childNum = 0;
+	int childPids[10] = { 0 };
+
+	pid_t child_pid;
+
+	while (isNotFinish())
+	{
+		if (pid == 0)
+		{
+			/*
+				child process要做的事情=>向前探勘
+			 */
+
+			while (isNotFound && (numRoute = getNumRoute()) == 1)
 			{
+				/*
+					當child process所在位置並非礦石所在地且沒有岔路時，不斷前進
+				 */
+
+				//Find direction to going
+				robot.direction = getDirection();
+
+
+				//going
+				robot.pos.x += direction[robot.direction][0];
+				robot.pos.y += direction[robot.direction][1];
+
+
+				//isFound ?
+				isNotFound = !(isOre(robot.pos.x, robot.pos.y));
+
+
 				
-				position[0] = i;
-				position[1] = j;
+				//set to wall
+				
+				map = (short int(*)[22])shmat(map_shm_id, 0, 0);	//存取map記憶體
+				if (isNotFound)
+				{
+					map[robot.pos.x][robot.pos.y] = MAP_WALL;
+				}
+				shmdt(map);	//釋放掉map的鎖定
+
+
+				/* 
+					進階功能 ii 和 iii 可將此printMap()註解取消，來觀看地圖變化狀況，
+					另外，若啟用printMap()，地圖印歪，或過程中出現負值的執行時間，可嘗試加大sleep。
+					出現負值執行時間原因在於，時間間隔，導致多個process嘗試存取map，(分別是列印和行走)
+					因為同時只能有一個process存取，n個process同時存取，只會有一個成功存取
+					剩下n-1個會失敗，並直接exit掉...
+				*/
+				/* 
+					printMap();
+					sleep(5);
+				*/
+
+			}
+
+			/* 離開迴圈有三種CASE */
+
+			if (!isNotFound)
+			{
+				/*  CASE 1
+					如果找到了，先印出來。
+					並透過結束status回傳給parent process（將1傳入exit）
+				 */
+				cout << getpid() << " (" << robot.pos.x - 1 << ", " << robot.pos.y - 1 << ") Found!" << endl;
+				exit(1);
+			}
+
+			else if (numRoute > 1)
+			{
+				/*
+					CASE 2
+					有岔路的case
+				 */
+				
+				/*
+					產生child process之前，先把pid重設成自己的。
+					如此一來在之後的迴圈當中會被視為是parent，就會停在原地不前進
+				 */
+				pid = getpid();
+
+
+				/* 計算可前進路線，因為會需要讀取地圖資料，所以先行鎖定 */
+				map = (short int(*)[22])shmat(map_shm_id, 0, 0);
+				refreshPassableDirection(passableDirection);
+				shmdt(map);
+
+				/* 初始化child數目 */
+				childNum = 0;
+
+				for (size_t i = 0; i < 4; i++)
+				{
+					/* 
+						pid > 0 亦即要剛剛pid已經被重設，要產生child的process，
+						(執行增加process的subroutine後pid會是child的pid，此時也會>0)
+						防止被產生child也呼叫增加process的subroutine 
+					*/
+					if (pid > 0 && passableDirection[i])
+					{
+						passableDirection[i] = false;
+						pid = createRobot(i);
+
+						//紀錄child的pid
+						childPids[childNum++] = pid;
+					}
+				}
+			}
+			else
+			{
+				/*
+					CASE 3 走到死路了
+					印出None並利用 status = 0告訴 parent沒找到
+				 */
+				cout << getpid() << " (" << robot.pos.x - 1 << ", " << robot.pos.y - 1 << ") None!" << endl;
+				exit(0);
 			}
 		}
+
+		else if (pid > 0)
+		{
+			/* 已經有child 的 process 在第二次外層迴圈會到這裡，等待child結束 */
+			while ((child_pid = wait(&status)) != -1)
+			{
+				/*
+					（此紀錄清單主要是要debug）
+					child_pid會收集被結束的process pid
+					將該pid與先前紀錄的child清單比對，確實為child，
+					則將其除名
+				 */
+				if (isChild(childPids, child_pid, childNum))
+				{
+					childNum--;
+				}
+
+				/* 
+					若process 執行exit(1) 在wait 會得到status == 256
+					前述設計exit(1)表示找到礦石
+					此處 得知自己第一子代找到礦石，印出found，
+					並將isNotFound這個flag設為false用以在自己結束時
+					決定exit所傳入之值，進而在往上一層process回報
+				 */
+
+				if (status == 256)
+				{
+					cout << getpid() << " (" << robot.pos.x - 1 << ", " << robot.pos.y - 1 << ") Found!" << endl;
+					isNotFound = false;
+				}
+			}
+
+
+			/* 
+				isNotFound意義已在上方說明
+				當執行到此處（脫離while），表示其child都已經結束（找到/或未找到）
+				依照isNotFound的value回報parent
+
+				另外，為了要能夠回到main function，在process結束前一律檢查是不是Root Process
+				不是root process的process才呼叫exit，並傳入status。
+			*/
+			if (isNotFound)
+			{
+				if (getpid() != mainPid)
+					exit(0);
+			}
+			else
+			{
+				if (getpid() != mainPid)
+					exit(1);
+			}
+		}
+		else
+		{
+			cerr << "[!!! Fatal Error !!!] process (pid = " << getpid() << " ) fork error !" << endl;
+			exit(-1);
+		}
+	
+		/* 不要讓程式跑太快所以....睡一下 */
+		sleep(1);
 	}
+
+
 }
 
-int getRouteNum(char map[20][20], struct Robot robot)
+int createRobot(short int dir)
+{
+	pid_t pid = fork();
+
+	if (pid < 0)
+	{
+		cerr << "[!!! Fatal Error !!!] process (pid = " << getpid() << " )fork error !" << endl;
+		exit(-1);
+	}
+	else if (pid == 0)
+	{
+		cout << "[pid = " << getpid() << "]: (" << robot.pos.x << ", " << robot.pos.y << ")" << endl;
+		robot.pos.x += direction[dir][0];
+		robot.pos.y += direction[dir][1];
+		robot.direction = dir;
+
+		/*
+			把parent用牆壁關起來，確保即使parent prcess call getNumRouter會得到回傳值為0，而停留原地
+		 */
+		
+		map = (short int(*)[22])shmat(map_shm_id, 0, 0);	//存取map共用記憶體
+		map[robot.pos.x][robot.pos.y] = MAP_WALL;
+		shmdt(map);	//釋放掉map
+	}
+	return pid;
+}
+
+int getNumRoute()
 {
 	int count = 0;
-	for(size_t i = 0; i < 4; i++)
+	for (size_t i = 0; i < 4; i++)
 	{
-		if(robot.pos_x + direction[i][0] < 20 && robot.pos_y + direction[i][1] < 20
-			&& map[robot.pos_x + direction[i][0]][robot.pos_y + direction[i][1]] == ' ')
-        {
-            count++;
-        }
+		if (isPassable(robot.pos.x + direction[i][0], robot.pos.y + direction[i][1]))
+			count++;
 	}
 
 	return count;
 }
 
-
-int createRobot(struct Robot robot, int dir)
+void refreshPassableDirection(bool* passableDirection)
 {
-	pid_t pid = fork();
+	for (size_t i = 0; i < 4; i++)
+	{
 
-	if(pid < 0)
-	{
-		cout << "fork error QAQ" << endl;
-	} else if( pid == 0)
-	{
-		countProcess++;
-		/*		test
-		cout << "I\'m " << getpid() << " in (" << robot.pos_x << ", " << robot.pos_y << ") and count is" << countProcess << endl;
-		*/
-		/* Create process success */
-		cout << "[pid = " << getpid() << "] (" << robot.pos_x << ", " << robot.pos_y << ")" << endl;
+		if (isPassable(robot.pos.x + direction[i][0], robot.pos.y + direction[i][1]))
+			passableDirection[i] = true;
+		else
+			passableDirection[i] = false;
 	}
-
-
-
-	return pid;
 }
 
-void explore()
+bool isPassable(short int x, short int y)
 {
-	struct Robot robot;
-	int startPoint[2];
-	findStartPoint(map, startPoint);
-
-	//set robot
-	robot.pos_x = startPoint[0];
-	robot.pos_y = startPoint[1];
-	robot.isFound = false;
-	getDirection(map, robot);
-
-
-	//儲存可以走得路
-	bool passable[4];
-
-	//儲存是否找到
-	bool isFound;
-	
-
-	//創造第一隻機器人
-	pid_t pid = createRobot(robot, getDirection(map, startPoint));
-
-	//save Route number
-	int numRoute;
-
-	/* robot (child process)*/
-	if(pid == 0)
+	map = (short int(*)[22])shmat(map_shm_id, 0, 0);
+	if (x < 1 || y < 1 || x > 20 || y > 20)
 	{
-		//判別main or robot
-		if(countProcess > 0) 
-		{
-			/* 剛被創造出來的robot */
-			cout << "路線有 " << (numRoute = getRouteNum(map, robot)) << endl;
-			//一條路往他的方向走
-			while(numRoute == 1
-				&& !(isFound = isOrePosition(map, robot)))
-			{
-				cout << getpid() << "要從 (" << robot.pos_x << ", " << robot.pos_y << ") 前進了" << endl;
-				cout << getpid() << "方向是" << direction[robot.direction][0] << ", " << direction[robot.direction][1] << ")" << endl;
-				//變牆壁
-				map[robot.pos_x][robot.pos_y] = '*';
-				robot.pos_x += direction[robot.direction][0];
-				robot.pos_y += direction[robot.direction][1];
-				cout << getpid() << "到達了 (" << robot.pos_x << ", " << robot.pos_y <<")" << endl;
-				//刷新方向
-				numRoute = getRouteNum(map, robot);
-				getDirection(map, robot);
-			}
-
-			cout << getpid() << "離開回圈了= =" << endl;
-
-			if(isFound)
-			{
-				cout << getpid() << " (" << robot.pos_x << ", " << robot.pos_y << ") Found!" << endl;
-			}
-
-			//如果有岔路
-			if(numRoute > 1)
-			{
-				cout << "在 (" << robot.pos_x << ", "<< robot.pos_y <<") 發現岔路!!" << endl;
-
-				/* 依照岔路產生機器人 */
-
-				//先取得可行方向有哪些
-				int currentPos[2];
-				currentPos[0] = robot.pos_x;
-				currentPos[1] = robot.pos_y;
-				getPassable(map, passable, currentPos);
-
-				//依照方向產生機器人
-				for(size_t i = 0; i < 4; i++)
-				{
-					if(passable[i])
-					{
-						pid = createRobot(robot, i);
-						cout << pid << endl;
-					}
-				}
-					
-			} 
-			else if( numRoute == 0)
-			{
-				//沒路了
-				cout << getpid() << " (" << robot.pos_x << ", " << robot.pos_y << ") None!" << endl;
-			}
-
-		}
-		
+		shmdt(map);
+		return false;
 	}
-	else if (pid > 0)
+
+	if (map[x][y] == MAP_ROAD || map[x][y] == MAP_ORE)
 	{
-		/* 等child 的 robot */	
-		while(pid = waitpid(-1, NULL, 0))
-		{
-			if(countProcess > 0) 
-			{
-				cout << "機器人在等小孩" << endl;
-			}
-			else if(countProcess == 0)
-			{
-				cout << "main 在等機器人" << endl;
-				sleep(2);
-			}
-		}
+		shmdt(map);
+		return true;
 	}
-	/*
-	else if(countProcess == 0)
-	{
-		//main
-		cout << "主程式在等機器人" << endl;
-		waitpid(pid, NULL, 0);
-	}
-	*/
+
+	shmdt(map);
+	return false;
 }
 
-void getDirection(char map[20][20], struct Robot robot)
+bool isOre(short int x, short int y)
 {
-	for(size_t i = 0; i < 4; i++)
+	map = (short int(*)[22])shmat(map_shm_id, 0, 0);
+	if (x < 1 || y < 1 || x > 20 || y > 20)
 	{
-		if(robot.pos_x + direction[i][0] < 20 && robot.pos_y + direction[i][1] < 20
-			&& map[robot.pos_x + direction[i][0]][robot.pos_y + direction[i][1]] == ' ')
-        {
-        	robot.direction = i;
-        	break;
-        }
+		shmdt(map);
+		return false;
 	}
 
+	map = (short int(*)[22])shmat(map_shm_id, 0, 0);
+	if (map[x][y] == MAP_ORE)
+	{
+		shmdt(map);
+		return true;
+	}
+
+	shmdt(map);
+	return false;
 }
 
-int getDirection(char map[20][20], int pos[])
+int getDirection()
 {
-	for(size_t i = 0; i < 4; i++)
+	for (size_t i = 0; i < 4; i++)
 	{
-		if(pos[0] + direction[i][0] < 20 && pos[1] + direction[i][1]
-			&& map[pos[0] + direction[i][0]][pos[1] + direction[i][1]] == ' ')
-        {
-            return i;
-        }
+		if (isPassable(robot.pos.x + direction[i][0], robot.pos.y + direction[i][1]))
+			return i;
 	}
+
 	return -1;
 }
 
-bool isOrePosition(char map[20][20], struct Robot robot)
+void findStartingPoint(struct Position &pos)
 {
-	if(map[robot.pos_x][robot.pos_y] == 'k' || map[robot.pos_x][robot.pos_y] == 'K')
-		return true;
-	else
-		return false;
+	map = (short int(*)[22])shmat(map_shm_id, 0, 0);
+	for (size_t i = 0; i < 22; i++)
+	{
+		for (size_t j = 0; j < 22; j++)
+		{
+			if (map[i][j] == MAP_START)
+			{
+				pos.x = i;
+				pos.y = j;
+				shmdt(map);
+				return;
+			}
+		}
+	}
 }
 
-void getPassable(char map[20][20], bool passable[], int pos[])
+bool isChild(int childPids[], int pid, int childNum)
 {
-	for(size_t i = 0; i < 4; i++)
+	for (size_t i = 0; i < childNum; i++)
 	{
-		if(pos[0] + direction[i][0] < 20 && pos[1] + direction[i][1]
-			&& map[pos[0] + direction[i][0]][pos[1] + direction[i][1]] == ' ')
-        {
-        	passable[i] = true;
-        }
-        else
-        	passable[i] = false;
+		if (childPids[i] == pid)
+		{
+			childPids[i] = 0;
+			return true;
+		}
 	}
+	return false;
+}
+
+bool isNotFinish()
+{
+	map = (short int(*)[22])shmat(map_shm_id, 0, 0);
+	for (size_t i = 1; i < 21; i++)
+	{
+		for (size_t j = 1; j < 21; j++)
+		{
+			if (map[i][j] == MAP_ROAD)
+			{
+				shmdt(map);
+				return true;
+			}
+
+		}
+	}
+
+	shmdt(map);
+	return false;
 }
