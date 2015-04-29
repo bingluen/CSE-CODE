@@ -445,7 +445,7 @@ int createRobot(short int dir)
 	}
 	else if (pid == 0)
 	{
-		cout << "[pid = " << getpid() << "]: (" << robot.pos.x << ", " << robot.pos.y << ")" << endl;
+		cout << "[pid = " << getpid() << "]: (" << robot.pos.x - 1 << ", " << robot.pos.y - 1 << ")" << endl;
 		robot.pos.x += direction[dir][0];
 		robot.pos.y += direction[dir][1];
 		robot.direction = dir;
