@@ -259,6 +259,8 @@ void explore()
 	int numRoute = getNumRoute();
 	int status;
 
+	int numOre = 0;
+
 	int childNum = 0;
 	int childPids[10] = { 0 };
 
@@ -413,7 +415,8 @@ void explore()
 
 				if (status == 256)
 				{
-					cout << getpid() << " (" << robot.pos.x - 1 << ", " << robot.pos.y - 1 << ") Found!" << endl;
+					numOre++;
+					cout << getpid() << " (" << robot.pos.x - 1 << ", " << robot.pos.y - 1 << ") Found! 其child累計搜尋到 "<< numOre << " 個礦源" << endl;
 					isNotFound = false;
 				}
 			}
