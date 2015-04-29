@@ -72,7 +72,10 @@ short int direction[4][2] = { { 0, -1 }, { 1, 0 }, { 0, 1 }, { -1, 0 } };
 
 //shared memory setting
 int map_shm_id = 0;
-int passableDirection_shm_id = 0;
+int totalNumOre_shm_id = 0;
+
+//Total Ore
+int *totalNumOre;
 
 //main pid
 pid_t mainPid;
@@ -96,6 +99,7 @@ int main(int argc, char* argv[])
 
 	/* set shared memory */
 	map_shm_id = shmget(IPC_PRIVATE, sizeof(short int)* 22 * 22, IPC_CREAT | 0666);
+	totalNumOre_shm_id = shmget(IPC_PRIVATE, sizeof(int), IPC_CREAT | 0666);
 
 	/* load map */
 	loadMap(argv[1], map);
@@ -109,9 +113,13 @@ int main(int argc, char* argv[])
 	/* get begin time  */
 	clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &end);
 
+	/* Print number of ore */
+	totalNumOre = (int*)shmat(totalNumOre_shm_id, 0, 0);
+	cout << "共有 " << *totalNumOre << " 個礦源" << endl;
+	shmdt(totalNumOre);
+
 	/* Nanosecond to millisecond */
 	timeCost = (end.tv_nsec - begin.tv_nsec) / 1000.0 / 1000.0;
-	
 	cout << "總執行時間：" << timeCost << " ms" << endl;
 
 	return 0;
@@ -305,6 +313,9 @@ void explore()
 					printMap();
 					sleep(5);
 				*/
+				
+				/* 不要讓程式跑太快所以....睡一下 */
+				sleep(1);
 
 			}
 
@@ -316,6 +327,12 @@ void explore()
 					如果找到了，先印出來。
 					並透過結束status回傳給parent process（將1傳入exit）
 				 */
+				
+				//找到的礦源數加回儲存於shared memory的統計資料中
+				totalNumOre = (int*)shmat(totalNumOre_shm_id, 0, 0);
+				*totalNumOre += 1;
+				shmdt(totalNumOre);
+
 				cout << getpid() << " (" << robot.pos.x - 1 << ", " << robot.pos.y - 1 << ") Found!" << endl;
 				exit(1);
 			}
@@ -450,9 +467,21 @@ int createRobot(short int dir)
 		robot.pos.y += direction[dir][1];
 		robot.direction = dir;
 
+		/* 若新的位置即礦源，直接離開 */
+		if(isOre(robot.pos.x, robot.pos.y))
+		{
+			totalNumOre = (int*)shmat(totalNumOre_shm_id, 0, 0);
+			*totalNumOre += 1;
+			shmdt(totalNumOre);
+
+			cout << getpid() << " (" << robot.pos.x - 1 << ", " << robot.pos.y - 1 << ") Found!" << endl;
+			exit(1);
+		}
+		
+
 		/*
 			把parent用牆壁關起來，確保即使parent prcess call getNumRouter會得到回傳值為0，而停留原地
-		 */
+		*/
 		
 		map = (short int(*)[22])shmat(map_shm_id, 0, 0);	//存取map共用記憶體
 		map[robot.pos.x][robot.pos.y] = MAP_WALL;
