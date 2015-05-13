@@ -18,4 +18,4 @@ plot(trafficLoad1, thoughtput1, 'r', trafficLoad2, thoughtput2, 'b');
 title('Prue ALOHA V.S. Slotted ALOHA');
 legend('Prue ALOHA', 'Slotted ALOHA');
 xlabel('Traffic Load');
-xlabel('Thoughput');
+ylabel('Thoughput');
