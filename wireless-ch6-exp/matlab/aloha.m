@@ -69,7 +69,7 @@ function [G, S] = aloha(HostNum, PacketNum)
 			totalFrame = totalFrame + 1;
 
 			% 第一個&最後一個Frame 只要發送時間點大於等於應該等待間隔時，就算成功 %
-			if ( i == 1 || i = hosts*PacketNum ) && interval(1, i) >= frameTime 
+			if ( i == 1 || i == hosts*PacketNum ) && interval(1, i) >= frameTime 
 				successFrame = successFrame +1;
 			end
 
@@ -79,8 +79,8 @@ function [G, S] = aloha(HostNum, PacketNum)
 			end
 
 			%計算在此case下（特定的host數目和packet數目）traffic load 和 throughput
-			G(hosts-1) = frameTime/observerdTime*totalFrame;
-			S(hosts-1) = frameTime/observerdTime*successFrame;
+			G(hosts-1) = frameTime/observedTimePoint*totalFrame;
+			S(hosts-1) = frameTime/observedTimePoint*successFrame;
 		end
 	end
 
