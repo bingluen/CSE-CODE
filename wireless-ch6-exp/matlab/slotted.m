@@ -35,7 +35,7 @@ function tp = slotted(M, frameLength)
 				
 				M(j, i) 是時間軸上的某一點 data
 				
-				M(j, i)/frameLength == floor(M(j, i)/frameLength 表示被整除
+				M(j, i)/frameLength == floor(M(j, i)/frameLength 表示不被整除
 				（我也不知道為什麼matlab要寫這麼醜的條件）
 
 				只有恰好在Frame長度整數倍的時間點，進行slotted才有意義
