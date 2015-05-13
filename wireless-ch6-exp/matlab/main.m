@@ -8,14 +8,16 @@ close all;
 %clear all;
 clc;
 
-% è¨ˆç®—è³‡æ–™ %
+% è¨ˆç?è³‡æ? %
 [trafficLoad1, thoughtput1] = aloha(HostNum, PacketNum);
 
 [trafficLoad2, thoughtput2] = slotted_aloha(HostNum, PacketNum);
 
-% ç•«åœ– Prue ALOHA ç”¨ç´…è‰²  Slotted ALOHAç”¨è—è‰² %
+% ?«å? Prue ALOHA ?¨ç??? Slotted ALOHA?¨è???%
 plot(trafficLoad1, thoughtput1, 'r', trafficLoad2, thoughtput2, 'b');
-title('Prue ALOHA V.S. Slotted ALOHA');
-legend('Prue ALOHA', 'Slotted ALOHA');
+title('Pure ALOHA V.S. Slotted ALOHA');
+legend('Pure ALOHA', 'Slotted ALOHA');
 xlabel('Traffic Load');
-ylabel('Thoughput');
+ylabel('Throughput');
+
+grid on;
