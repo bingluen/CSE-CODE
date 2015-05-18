@@ -127,7 +127,7 @@ HugeInteger<T> HugeInteger<T>::square()
 	}
 
 	/* 計算長度 */
-	for (Vector<T>::iterator it = result.end() - 1; *it <= 0 && result.getSize() > 1; result.resize(result.getSize() - 1));
+	for (Vector<T>::iterator it = result.end() - 1; *it <= 0 && result.getSize() > 1; result.resize(result.getSize() - 1), it = result.end() - 1);	//加上 it = result.end() - 1
 
 	return result;
 }
@@ -153,7 +153,7 @@ HugeInteger<T> HugeInteger<T>::squareRoot()
 	}
 
 	/* 計算長度 */
-	for (Vector<T>::iterator it = result.end() - 1; *it <= 0; result.resize(result.getSize() - 1));
+	for (Vector<T>::iterator it = result.end() - 1; *it <= 0; result.resize(result.getSize() - 1), it = result.end() - 1);	//加上 it = result.end() - 1
 
 	return result;
 }
