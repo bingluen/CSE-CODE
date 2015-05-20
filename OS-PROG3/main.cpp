@@ -38,7 +38,7 @@ struct Position
 {
 	short int x;
 	short int y;
-}
+};
 
 //robot
 struct Robot
