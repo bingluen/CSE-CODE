@@ -161,6 +161,6 @@ int encodeMapSymbol(char symbol)
 	}
 }
 
-void *robot(struct Robot&);
+void *robot(struct Robot&)
 {
 }
