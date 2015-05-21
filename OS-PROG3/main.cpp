@@ -38,6 +38,7 @@ struct Position
 {
 	short int x;
 	short int y;
+	short int floor;
 };
 
 //robot
@@ -50,28 +51,48 @@ struct Robot
 struct Pit
 {
 	short int floors;
-	struct Map* startLayer;
-	struct Map* endLayer;
+	struct Map* startFloor;
+	struct Map* endFloor;
 };
 
 struct Map
 {
 	short int data[22][22];
-	struct Map* downLayer;
-	struct Map* upLayer;
+	struct Map* downFloor;
+	struct Map* upFloor;
+	short int row;
 };
 
 /* Global data */
 
 struct Pit pit = { 0, 0, 0 };
 
+/* subroutine */
+//Robot
 void *robot(struct Robot&);
 
+//loadPitMap
 void loadPitMap(char* filename);
+
+//AddMap
+void addMapToPil(unsigned short int [22][22], size_t);
+
+//encodeMapSymbol
+int encodeMapSymbol(char symbol);
+
+//decodeMapSymbol
+char decodeMapSymbol(int code);
+
+//print [Debug]
+void printMap();
+
+//explore
+void explore();
 
 int main (int argc, char *argv[])
 {
-
+	loadPitMap(argv[1]);
+	printMap();
 	return 0;
 }
 
@@ -88,28 +109,78 @@ void loadPitMap(char *filename)
 	unsigned short int map[22][22];
 	unsigned int row = 0;
 
-	//set top wall
-	for (size_t i = 0; i < 22; i++)
-		map[row][i] = MAP_MARGIN;
-	row++;
 
 	//load file
 	char input[20];
 
 	/* 先讀第一行 */
 	mapFile.getline(input, 21, '\n');
+	/* 重新指向開頭 */
+	mapFile.seekg(0);
 
-	/* 判斷長度  若長度是20則 */
+	/* 判斷長度  若長度是20則只有一層地圖 */
 
-	cout << strlen(input) << endl;
+	if(strlen(input) == 20)
+	{
+		row = 0;
+		/* 只有一層地圖 */
+
+		//set top margin
+		for (size_t i = 0; i < 22; i++)
+			map[row][i] = MAP_MARGIN;
+		row++;
+
+		while(mapFile.getline(input, 21, '\n'))
+		{
+			map[row][0] = MAP_MARGIN;
+			for(size_t i = 1; i < 22; i++)
+			{
+				map[row][i] = encodeMapSymbol(input[i - 1]);
+			}
+			map[row++][21] = MAP_MARGIN;
+		}
+
+		//set bottom margin
+		for (size_t i = 0; i < 22; i++)
+			map[row][i] = MAP_MARGIN;
+		row++;
+		addMapToPil(map, row);
+	} else {
+		/* 多層地圖 */
+
+		while(!mapFile.eof())
+		{
+			/* clear map */
+			memset(map, 0, sizeof(unsigned short int) * 22 * 22);
+			row = 0;
+
+			//set top margin
+			for (size_t i = 0; i < 22; i++)
+				map[row][i] = MAP_MARGIN;
+			row++;
+			while(mapFile.getline(input, 21, '\n')) {
+				if(strlen(input) < 20)
+					if(row > 1)
+						break;
+					else
+						continue;
+			    map[row][0] = MAP_MARGIN;
+				for(size_t i = 1; i < 22; i++)
+				{
+					map[row][i] = encodeMapSymbol(input[i - 1]);
+				}
+				map[row++][21] = MAP_MARGIN;
+			}
+			//set bottom margin
+			for (size_t i = 0; i < 22; i++)
+				map[row][i] = MAP_MARGIN;
+			row++;
+			addMapToPil(map, row);
+		}
+	}
 
 	/*
-	while(mapFile.getline(input, 21, '\n'))
-	{
-		//set left wall
-		map[row][0] = MAP_MARGIN;
-		for()
-	}
+	
 	*/
 }
 
@@ -121,21 +192,24 @@ void addMapToPil(unsigned short int map[22][22], size_t row)
 
 	/* copy data */
 	memcpy(pMap->data, map, sizeof(unsigned short int) * row * 22);
+	pMap->row = row;
 
 	if(pit.floors == 0)
 	{
-		pit.startLayer = pit.endLayer = pMap;
+		pit.startFloor = pit.endFloor = pMap;
 		pit.floors = 1;
-		pMap->upLayer = pMap->downLayer = NULL;
+		pMap->upFloor = pMap->downFloor = NULL;
 	}
 	else if(pit.floors >= 1)
 	{
-		pMap->upLayer = pit.endLayer;
-		pMap->downLayer = NULL;
-		pit.endLayer->downLayer = pMap;
-		pit.endLayer = pMap;
+		pMap->upFloor = pit.endFloor;
+		pMap->downFloor = NULL;
+		pit.endFloor->downFloor = pMap;
+		pit.endFloor = pMap;
 		pit.floors += 1;
 	}
+
+	cout << "[Debug] pit: floors = " << pit.floors << " , startFloor = " << pit.startFloor << " , endFloor = " << pit.endFloor << endl;
 }
 
 int encodeMapSymbol(char symbol)
@@ -161,6 +235,52 @@ int encodeMapSymbol(char symbol)
 	}
 }
 
+char decodeMapSymbol(int code)
+{
+	switch (code)
+	{
+	case MAP_ROAD:
+		return ' ';
+	case MAP_ORE:
+		return 'K';
+	case MAP_START:
+		return 'S';
+	case MAP_WALL:
+		return '*';
+	case MAP_WARP_UP:
+		return 'U';
+	case MAP_WARP_DOWN:
+		return 'D';
+	case MAP_MARGIN:
+		return '#';
+
+	}
+}
+
+void printMap()
+{
+	struct Map* pMap = pit.startFloor;
+	for(size_t i = 0; i < pit.floors; i++)
+	{
+		cout << "第 " << i << " 層" << endl;
+		for(size_t j = 0; j < pMap->row; j++)
+		{
+			for(size_t k = 0; k < 22; k++)
+			{
+				cout << decodeMapSymbol(pMap->data[j][k]);
+			}
+
+			cout << endl;
+		}
+		pMap = pMap->downFloor;
+	}
+}
+
 void *robot(struct Robot&)
 {
+}
+
+void explore()
+{
+
 }
