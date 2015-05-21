@@ -32,6 +32,21 @@ const int MAP_MARGIN = 4;
 const int MAP_WARP_UP = 5;
 const int MAP_WARP_DOWN = 6;
 
+/**
+ * Position print style
+ * 標準輸出格式 = -1
+ * Debug格式 = -2
+ */
+const int POSITION_PRINT_STYLE_STD = -1;
+const int POSITION_PRINT_STYLE_RESULT = -3;
+const int POSITION_PRINT_STYLE_DEBUG = -2;
+
+/**
+ * 前進方向
+ * 上、右、下、左
+ */
+const short int direction[4][2] = { { 0, -1 }, { 1, 0 }, { 0, 1 }, { -1, 0 } };
+
 /* Data structure */
 //position
 struct Position
@@ -87,12 +102,29 @@ char decodeMapSymbol(int code);
 void printMap();
 
 //explore
-void explore();
+void explore(struct Robot&);
+
+//search start potin
+struct Position searchStartPoint();
+
+//search forward direction
+size_t searchForwardDirection(struct Position pos);
+
+//count number of road
+short int countRoadNum(struct Position pos);
 
 int main (int argc, char *argv[])
 {
 	loadPitMap(argv[1]);
 	printMap();
+
+	/* init first robot */
+	struct Robot robot;
+
+	robot.pos = searchStartPoint();
+
+	explore(robot);
+
 	return 0;
 }
 
@@ -209,7 +241,7 @@ void addMapToPil(unsigned short int map[22][22], size_t row)
 		pit.floors += 1;
 	}
 
-	cout << "[Debug] pit: floors = " << pit.floors << " , startFloor = " << pit.startFloor << " , endFloor = " << pit.endFloor << endl;
+	//cout << "[Debug] pit: floors = " << pit.floors << " , startFloor = " << pit.startFloor << " , endFloor = " << pit.endFloor << endl;
 }
 
 int encodeMapSymbol(char symbol)
@@ -276,11 +308,106 @@ void printMap()
 	}
 }
 
-void *robot(struct Robot&)
+struct Position searchStartPoint()
 {
+	struct Position startPoint;
+	struct Map* pMap = pit.startFloor;
+	for(size_t k = 0; k < pit.floors; k++)
+	{
+		for(size_t i = 0; i < pMap->row; i++)
+		{
+			for(size_t j = 0; j < 22; j++)
+			{
+				if(pMap->data[i][j] == MAP_START)
+				{
+					startPoint.x = i;
+					startPoint.y = j;
+					startPoint.floor = k;
+
+					cout << "[Debug] startPoint: floors = " << startPoint.floor << " , startPoint.x = " << startPoint.x << " , endFloor = " << startPoint.y << endl;
+
+					return startPoint;
+				}
+			}
+		}
+		pMap = pMap->downFloor;
+	}
+	
 }
 
-void explore()
+void printPosition(struct Position pos, int style)
+{
+	if (pit.floors > 1)
+	{
+		switch(style)
+		{
+			case POSITION_PRINT_STYLE_STD:
+				cout << "[tid = " << syscall(SYS_gettid) "]: (" << pos.floor * -1 << "," << pos.x - 1 << "," << pos.y - 1 << ")" << endl;
+				break;
+			case POSITION_PRINT_STYLE_RESULT:
+				cout << syscall(SYS_gettid) "(" << pos.floor * -1 << "," << pos.x - 1 << "," << pos.y - 1 << ")";
+				break;
+			case POSITION_PRINT_STYLE_DEBUG:
+				cout << "[Debug] [tid = " << syscall(SYS_gettid) "]: (" << pos.floor * -1 << "," << pos.x - 1 << "," << pos.y - 1 << ")" << endl;
+				break;
+		}
+	} else {
+		switch(style)
+		{
+			case POSITION_PRINT_STYLE_STD:
+				cout << "[tid = " << syscall(SYS_gettid) "]: (" << pos.x - 1 << "," << pos.y - 1 << ")" << endl;
+				break;
+			case POSITION_PRINT_STYLE_RESULT:
+				cout << syscall(SYS_gettid) "(" << pos.x - 1 << "," << pos.y - 1 << ")";
+				break;
+			case POSITION_PRINT_STYLE_DEBUG:
+				cout << "[Debug] [tid = " << syscall(SYS_gettid) "]: (" << pos.x - 1 << "," << pos.y - 1 << ")" << endl;
+				break;
+		}
+	}
+	
+}
+
+size_t searchForwardDirection(struct Position pos)
+{
+	/* 拿到所在樓層地圖 */
+	struct Map *pMap = pit.startFloor;
+	for(size_t i = 0; i < pos.floor && i < pit.floors; i++)
+		pMap = pMap->downFloor;
+
+	/*  尋找第一個可行進方向 */
+	for(size_t i = 0; i < 4; i++)
+	{
+		if(pMap->data[pos.x + direction[i][0]][pos.y[i][1]] == MAP_ROAD)
+			return i;
+	}
+}
+
+short int countRoadNum(struct Position pos)
+{
+	short count = 0;
+
+	/* 拿到所在樓層地圖 */
+	struct Map *pMap = pit.startFloor;
+	for(size_t i = 0; i < pos.floor && i < pit.floors; i++)
+		pMap = pMap->downFloor;
+
+	/*  計算可行進方向 */
+	for(size_t i = 0; i < 4; i++)
+	{
+		if(pMap->data[pos.x + direction[i][0]][pos.y[i][1]] == MAP_ROAD)
+			count++;
+	}
+
+	return count;
+}
+
+void explore(struct Robot &robot)
+{
+	
+}
+
+void *robot(struct Robot &robot)
 {
 
 }
