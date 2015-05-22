@@ -105,7 +105,7 @@ void printMap();
 void explore();
 
 //Stepping
-void *stepping(struct Robot&);
+void *stepping(void *pRobot);
 
 //search start potin
 struct Position searchStartPoint();
@@ -298,10 +298,11 @@ char decodeMapSymbol(int code)
 
 void printMap()
 {
+	cout << "順向列印" << endl;
 	struct Map* pMap = pit.startFloor;
 	for(size_t i = 0; i < pit.floors; i++)
 	{
-		cout << "第 " << i << " 層" << endl;
+		cout << "第 " << "-" <<i << " 層" << endl;
 		for(size_t j = 0; j < pMap->row; j++)
 		{
 			for(size_t k = 0; k < 22; k++)
@@ -312,6 +313,24 @@ void printMap()
 			cout << endl;
 		}
 		pMap = pMap->downFloor;
+	}
+
+	cout << endl;
+	cout << "逆向列印" << endl;
+	pMap = pit.endFloor;
+	for(int i = pit.floors ; i > 0; i--)
+	{
+		cout << "第 "<< "-" << (i-1)*-1 << " 層" << endl;
+		for(size_t j = 0; j < pMap->row; j++)
+		{
+			for(size_t k = 0; k < 22; k++)
+			{
+				cout << decodeMapSymbol(pMap->data[j][k]);
+			}
+
+			cout << endl;
+		}
+		pMap = pMap->upFloor;
 	}
 }
 
@@ -331,7 +350,7 @@ struct Position searchStartPoint()
 					startPoint.y = j;
 					startPoint.floor = k;
 
-					cout << "[Debug] startPoint: floors = " << startPoint.floor << " , startPoint.x = " << startPoint.x << " , endFloor = " << startPoint.y << endl;
+					cout << "[Debug] startPoint: floors = " << startPoint.floor << " , startPoint.x = " << startPoint.x << " , startPoint.y = " << startPoint.y << endl;
 
 					return startPoint;
 				}
@@ -368,7 +387,7 @@ void printPosition(struct Position pos, int style)
 				cout << syscall(SYS_gettid) << "(" << pos.x - 1 << "," << pos.y - 1 << ")";
 				break;
 			case POSITION_PRINT_STYLE_DEBUG:
-				cout << "[Debug] [tid = " << syscall(SYS_gettid) << "]: (" << pos.x - 1 << "," << pos.y - 1 << ")" << endl;
+				cout << "[Debug] [tid = " << syscall(SYS_gettid) << "]: (" << pos.x - 1 << "," << pos.y - 1 << ")";
 				break;
 		}
 	}
@@ -385,7 +404,10 @@ size_t searchForwardDirection(struct Position pos)
 	/*  尋找第一個可行進方向 */
 	for(size_t i = 0; i < 4; i++)
 	{
-		if(pMap->data[pos.x + direction[i][0]][pos.y + direction[i][1]] == MAP_ROAD)
+		if(pMap->data[pos.x + direction[i][0]][pos.y + direction[i][1]] == MAP_ROAD||
+			pMap->data[pos.x + direction[i][0]][pos.y +direction[i][1]] == MAP_WARP_DOWN ||
+			pMap->data[pos.x + direction[i][0]][pos.y +direction[i][1]] == MAP_WARP_UP ||
+			pMap->data[pos.x + direction[i][0]][pos.y +direction[i][1]] == MAP_ORE)
 			return i;
 	}
 }
@@ -394,15 +416,29 @@ short int countRoadNum(struct Position pos)
 {
 	short count = 0;
 
+	//printPosition(pos, POSITION_PRINT_STYLE_DEBUG);
+
+
 	/* 拿到所在樓層地圖 */
 	struct Map *pMap = pit.startFloor;
 	for(size_t i = 0; i < pos.floor && i < pit.floors; i++)
 		pMap = pMap->downFloor;
 
+	//cout << "[" <<  decodeMapSymbol(pMap->data[pos.x][pos.y]) << "]" << endl;
+
 	/*  計算可行進方向 */
 	for(size_t i = 0; i < 4; i++)
 	{
-		if(pMap->data[pos.x + direction[i][0]][pos.y +direction[i][1]] == MAP_ROAD)
+		/*
+		cout << "[ (" 
+			<< pos.x + direction[i][0] << ", " << pos.y +direction[i][1] << ") "
+			<<  decodeMapSymbol(pMap->data[pos.x + direction[i][0]][pos.y +direction[i][1]]) 
+			<< "]" << endl;
+			*/
+		if(pMap->data[pos.x + direction[i][0]][pos.y +direction[i][1]] == MAP_ROAD ||
+			pMap->data[pos.x + direction[i][0]][pos.y +direction[i][1]] == MAP_WARP_DOWN ||
+			pMap->data[pos.x + direction[i][0]][pos.y +direction[i][1]] == MAP_WARP_UP||
+			pMap->data[pos.x + direction[i][0]][pos.y +direction[i][1]] == MAP_ORE)
 			count++;
 	}
 
@@ -415,39 +451,66 @@ void explore()
 	struct Robot robot;
 
 	robot.pos = searchStartPoint();
+	robot.direction = searchForwardDirection(robot.pos);
 
-	stepping(robot);
+	stepping(reinterpret_cast<void *> (&robot));
 }
 
-void *stepping(struct Robot &robot) 
+void *stepping(void *pRob) 
 {
 
 	short int roadNum = 0;
 
-	/* print robot position */
-	printPosition(robot.pos, POSITION_PRINT_STYLE_STD);
-	/* set to wall */
-	setWall(robot.pos);
+	struct Robot * pR = reinterpret_cast<struct Robot *> (pRob);
 
-	while((roadNum = countRoadNum(robot.pos)) == 1)
+	/* print robot position */
+	printPosition(pR->pos, POSITION_PRINT_STYLE_STD);
+	/* set to wall */
+	setWall(pR->pos);
+
+	/* go ahead */
+	pR->pos.x += direction[pR->direction][0];
+	pR->pos.y += direction[pR->direction][1];
+
+	/* set to wall */
+	setWall(pR->pos);
+
+	while((roadNum = countRoadNum(pR->pos)) == 1)
 	{
 
 		/* find direction */
-		size_t dir = searchForwardDirection(robot.pos);
+		pR->direction = searchForwardDirection(pR->pos);
 
 		/* go-ahead */
-
-		robot.pos.x += direction[dir][0];
-		robot.pos.y += direction[dir][1];
+		pR->pos.x += direction[pR->direction][0];
+		pR->pos.y += direction[pR->direction][1];
 
 		/* if is a stairs go down or go up */
-		if(isDown(robot.pos))
-			robot.pos.floor -= 1;
-		else if(isUp(robot.pos))
-			robot.pos.floor += 1;
+		if(isDown(pR->pos))
+		{
+			/* set to wall */
+			setWall(pR->pos);
+			pR->pos.floor += 1;
+			//printPosition(pR->pos, POSITION_PRINT_STYLE_DEBUG);
+			cout << "往下一層" << endl;
+			/* find direction */
+			pR->direction = searchForwardDirection(pR->pos);
+		}
+		else if(isUp(pR->pos))
+		{
+			/* set to wall */
+			setWall(pR->pos);
+			pR->pos.floor -= 1;
+			//printPosition(pR->pos, POSITION_PRINT_STYLE_DEBUG);
+			cout << "往上一層" << endl;
+			/* find direction */
+			pR->direction = searchForwardDirection(pR->pos);
+		}
+			
 
 		/* set to wall */
-		setWall(robot.pos);
+		if(!isOre(pR->pos))
+			setWall(pR->pos);
 	}
 
 	if(roadNum > 1)
@@ -465,59 +528,44 @@ void *stepping(struct Robot &robot)
 			pthread_attr_init(attr + i);
 
 			/* find direction */
-			size_t dir = searchForwardDirection(robot.pos);
+			size_t dir = searchForwardDirection(pR->pos);
 
 			pRobot = new struct Robot;
 
-			pRobot->pos.x = robot.pos.x + direction[dir][0];
-			pRobot->pos.y = robot.pos.y + direction[dir][1];
-			pRobot->pos.floor = robot.pos.floor;
+			pRobot->pos.x = pR->pos.x;
+			pRobot->pos.y = pR->pos.y;
+			pRobot->pos.floor = pR->pos.floor;
+			pRobot->direction = dir;
 
-			setWall(pRobot->pos);
-
-			pthread_create(tid+i, attr+i, stepping, reinterpret_cast<void*> (&(*pRobot)));
+			pthread_create(tid+i, attr+i, stepping, reinterpret_cast<void *> (pRobot));
+			sleep(1);
 		}
 
-		/* wait for all child thread */
-		bool isFound = false;
 		for(size_t i = 0; i < roadNum; i++)
 		{
-			char *messages
-			pthread_join(tid+i, &messages);
-			printPosition(robot.pos, POSITION_PRINT_STYLE_RESULT);
-			cout << messages << endl;
-			if (strcmp(messages, "Found !") == 0)
-			{
-				isFound = true;
-			}
+			char *messages;
+			pthread_join(*(tid+i), &messages);
+			
 		}
-
-		if(mainTid != syscall(SYS_gettid))
-		{
-			if (isFound)
-			{
-				char *messages = "Found !";
-				pthread_exit(&messages));
-			}
-			else
-			{
-				char *messages = "None !";
-				pthread_exit(&messages));
-			}
-		}
-		
-
 
 	} else if(roadNum == 0 && mainTid != syscall(SYS_gettid)) {
-		if(isOre(robot.pos))
+		char *mFound = "Found !";
+		char *mNonde = "None !";
+		if(isOre(pR->pos))
 		{
-			char *messages = "Found !";
-			pthread_exit(&messages));
+			/* set to wall */
+			setWall(pR->pos);
+			printPosition(pR->pos, POSITION_PRINT_STYLE_RESULT);
+			cout << " Found !" << endl;
+			pthread_exit(mFound);
 		}
 		else
 		{
-			char *messages = "None !";
-			pthread_exit(&messages));
+			/* set to wall */
+			setWall(pR->pos);
+			printPosition(pR->pos, POSITION_PRINT_STYLE_RESULT);
+			cout << " None !" << endl;
+			pthread_exit(mNonde);
 		}
 	}
 }
