@@ -82,9 +82,9 @@ struct Map
 
 struct Pit pit = { 0, 0, 0 };
 
+pthread_t mainTid;
+
 /* subroutine */
-//Robot
-void *robot(struct Robot&);
 
 //loadPitMap
 void loadPitMap(char* filename);
@@ -102,7 +102,10 @@ char decodeMapSymbol(int code);
 void printMap();
 
 //explore
-void explore(struct Robot&);
+void explore();
+
+//Stepping
+void *stepping(struct Robot&);
 
 //search start potin
 struct Position searchStartPoint();
@@ -113,17 +116,21 @@ size_t searchForwardDirection(struct Position pos);
 //count number of road
 short int countRoadNum(struct Position pos);
 
+//set position to wall
+void setWall(struct Position pos);
+
+
+bool isUp(struct Position pos);
+bool isUp(struct Position pos);
+bool isOre(struct Position pos);
+
 int main (int argc, char *argv[])
 {
+	mainTid = syscall(SYS_gettid);
 	loadPitMap(argv[1]);
 	printMap();
 
-	/* init first robot */
-	struct Robot robot;
-
-	robot.pos = searchStartPoint();
-
-	explore(robot);
+	explore();
 
 	return 0;
 }
@@ -402,12 +409,157 @@ short int countRoadNum(struct Position pos)
 	return count;
 }
 
-void explore(struct Robot &robot)
+void explore()
 {
-	
+	/* init first robot */
+	struct Robot robot;
+
+	robot.pos = searchStartPoint();
+
+	stepping(robot);
 }
 
-void *robot(struct Robot &robot)
+void *stepping(struct Robot &robot) 
 {
 
+	short int roadNum = 0;
+
+	/* print robot position */
+	printPosition(robot.pos, POSITION_PRINT_STYLE_STD);
+	/* set to wall */
+	setWall(robot.pos);
+
+	while((roadNum = countRoadNum(robot.pos)) == 1)
+	{
+
+		/* find direction */
+		size_t dir = searchForwardDirection(robot.pos);
+
+		/* go-ahead */
+
+		robot.pos.x += direction[dir][0];
+		robot.pos.y += direction[dir][1];
+
+		/* if is a stairs go down or go up */
+		if(isDown(robot.pos))
+			robot.pos.floor -= 1;
+		else if(isUp(robot.pos))
+			robot.pos.floor += 1;
+
+		/* set to wall */
+		setWall(robot.pos);
+	}
+
+	if(roadNum > 1)
+	{
+		pthread_t *tid;
+		pthread_attr_t *attr;
+		struct Robot pRobot;
+
+		tid = new pthread_t[roadNum];
+		attr = new pthread_attr_t[roadNum]
+
+		/* 產生岔路數量的robot */
+		for(size_t i = 0; i < roadNum; i++)
+		{
+			pthread_attr_init(attr + i);
+
+			/* find direction */
+			size_t dir = searchForwardDirection(robot.pos);
+
+			pRobot = new struct Robot;
+
+			pRobot->pos.x = robot.pos.x + direction[dir][0];
+			pRobot->pos.y = robot.pos.y + direction[dir][1];
+			pRobot->pos.floor = robot.pos.floor;
+
+			setWall(pRobot->pos);
+
+			pthread_create(tid+i, attr+i, stepping, pRobot)
+		}
+
+		/* wait for all child thread */
+		bool isFound = false;
+		for(size_t i = 0; i < roadNum; i++)
+		{
+			size_t status;
+			pthread_join(tid+i, &status);
+			if (status == 1)
+			{
+				printPosition(robot.pos);
+				cout << "Found !" << endl;
+				isFound = false;
+			} else if (status == 0 && !isFound)
+			{
+				printPosition(robot.pos);
+				cout << "None !" << endl;
+			}
+		}
+
+		if(mainTid != syscall(SYS_gettid))
+		{
+			if (isFound)
+				pthread_exit(1);
+			else 
+				pthread_exit(0);
+		}
+		
+
+
+	} else if(roadNum == 0 && mainTid != syscall(SYS_gettid)) {
+		if(isOre(robot.pos))
+			pthread_exit(1);
+		else
+			pthread_exit(0);
+	}
+}
+
+void setWall(struct Position pos)
+{
+	/* 拿到所在樓層地圖 */
+	struct Map *pMap = pit.startFloor;
+	for(size_t i = 0; i < pos.floor && i < pit.floors; i++)
+		pMap = pMap->downFloor;
+
+	/* set wall */
+	pMap->data[pos.x][pos.y] = MAP_WALL;
+}
+
+bool isDown(struct Position pos)
+{
+	/* 拿到所在樓層地圖 */
+	struct Map *pMap = pit.startFloor;
+	for(size_t i = 0; i < pos.floor && i < pit.floors; i++)
+		pMap = pMap->downFloor;
+
+	if(pMap->data[pos.x][pos.y] == MAP_WARP_DOWN)
+		return true
+	else
+		return false;
+}
+
+bool isUp(struct Position pos)
+{
+	/* 拿到所在樓層地圖 */
+	struct Map *pMap = pit.startFloor;
+	for(size_t i = 0; i < pos.floor && i < pit.floors; i++)
+		pMap = pMap->downFloor;
+
+	if(pMap->data[pos.x][pos.y] == MAP_WARP_UP)
+		return true
+	else
+		return false;
+}
+
+bool isOre(struct Position pos)
+{
+	/* 拿到所在樓層地圖 */
+	struct Map *pMap = pit.startFloor;
+	for(size_t i = 0; i < pos.floor && i < pit.floors; i++)
+		pMap = pMap->downFloor;
+
+	if(pMap->data[pos.x][pos.y] == MAP_ORE)
+		return true
+	else
+		return false;
 }
