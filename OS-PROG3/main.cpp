@@ -84,6 +84,9 @@ struct Pit pit = { 0, 0, 0 };
 
 pthread_t mainTid;
 
+int numThread = 0;
+int numOre = 0;
+
 /* subroutine */
 
 //loadPitMap
@@ -141,6 +144,9 @@ int main (int argc, char *argv[])
 	/* Nanosecond to millisecond */
 	timeCost = (end.tv_nsec - begin.tv_nsec) / 1000.0 / 1000.0;
 	cout << "總執行時間：" << timeCost << " ms" << endl;
+
+	cout << "本次探勘使用機器人(thread)數量：" << numThread << endl;
+	cout << "找到的礦源有：" << numOre << "個" << endl;
 
 	return 0;
 }
@@ -552,9 +558,9 @@ void *stepping(void *pRob)
 			pRobot->pos.y = pR->pos.y;
 			pRobot->pos.floor = pR->pos.floor;
 			pRobot->direction = dir;
-
+			numThread++;
 			pthread_create(tid+i, attr+i, stepping, reinterpret_cast<void *> (pRobot));
-			sleep(1);
+			sleep(3);
 		}
 
 		/* wait for all thread */
@@ -590,6 +596,7 @@ void *stepping(void *pRob)
 			setWall(pR->pos);
 			printPosition(pR->pos, POSITION_PRINT_STYLE_RESULT);
 			cout << " Found !" << endl;
+			numOre++;
 			pthread_exit(&mFound);
 		}
 		else
