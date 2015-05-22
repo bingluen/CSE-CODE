@@ -121,7 +121,7 @@ void setWall(struct Position pos);
 
 
 bool isUp(struct Position pos);
-bool isUp(struct Position pos);
+bool isDown(struct Position pos);
 bool isOre(struct Position pos);
 
 int main (int argc, char *argv[])
@@ -349,26 +349,26 @@ void printPosition(struct Position pos, int style)
 		switch(style)
 		{
 			case POSITION_PRINT_STYLE_STD:
-				cout << "[tid = " << syscall(SYS_gettid) "]: (" << pos.floor * -1 << "," << pos.x - 1 << "," << pos.y - 1 << ")" << endl;
+				cout << "[tid = " << syscall(SYS_gettid) << "]: (" << pos.floor * -1 << "," << pos.x - 1 << "," << pos.y - 1 << ")" << endl;
 				break;
 			case POSITION_PRINT_STYLE_RESULT:
-				cout << syscall(SYS_gettid) "(" << pos.floor * -1 << "," << pos.x - 1 << "," << pos.y - 1 << ")";
+				cout << syscall(SYS_gettid) << "(" << pos.floor * -1 << "," << pos.x - 1 << "," << pos.y - 1 << ")";
 				break;
 			case POSITION_PRINT_STYLE_DEBUG:
-				cout << "[Debug] [tid = " << syscall(SYS_gettid) "]: (" << pos.floor * -1 << "," << pos.x - 1 << "," << pos.y - 1 << ")" << endl;
+				cout << "[Debug] [tid = " << syscall(SYS_gettid) << "]: (" << pos.floor * -1 << "," << pos.x - 1 << "," << pos.y - 1 << ")" << endl;
 				break;
 		}
 	} else {
 		switch(style)
 		{
 			case POSITION_PRINT_STYLE_STD:
-				cout << "[tid = " << syscall(SYS_gettid) "]: (" << pos.x - 1 << "," << pos.y - 1 << ")" << endl;
+				cout << "[tid = " << syscall(SYS_gettid) << "]: (" << pos.x - 1 << "," << pos.y - 1 << ")" << endl;
 				break;
 			case POSITION_PRINT_STYLE_RESULT:
-				cout << syscall(SYS_gettid) "(" << pos.x - 1 << "," << pos.y - 1 << ")";
+				cout << syscall(SYS_gettid) << "(" << pos.x - 1 << "," << pos.y - 1 << ")";
 				break;
 			case POSITION_PRINT_STYLE_DEBUG:
-				cout << "[Debug] [tid = " << syscall(SYS_gettid) "]: (" << pos.x - 1 << "," << pos.y - 1 << ")" << endl;
+				cout << "[Debug] [tid = " << syscall(SYS_gettid) << "]: (" << pos.x - 1 << "," << pos.y - 1 << ")" << endl;
 				break;
 		}
 	}
@@ -385,7 +385,7 @@ size_t searchForwardDirection(struct Position pos)
 	/*  尋找第一個可行進方向 */
 	for(size_t i = 0; i < 4; i++)
 	{
-		if(pMap->data[pos.x + direction[i][0]][pos.y[i][1]] == MAP_ROAD)
+		if(pMap->data[pos.x + direction[i][0]][pos.y + direction[i][1]] == MAP_ROAD)
 			return i;
 	}
 }
@@ -402,7 +402,7 @@ short int countRoadNum(struct Position pos)
 	/*  計算可行進方向 */
 	for(size_t i = 0; i < 4; i++)
 	{
-		if(pMap->data[pos.x + direction[i][0]][pos.y[i][1]] == MAP_ROAD)
+		if(pMap->data[pos.x + direction[i][0]][pos.y +direction[i][1]] == MAP_ROAD)
 			count++;
 	}
 
@@ -454,10 +454,10 @@ void *stepping(struct Robot &robot)
 	{
 		pthread_t *tid;
 		pthread_attr_t *attr;
-		struct Robot pRobot;
+		struct Robot *pRobot;
 
 		tid = new pthread_t[roadNum];
-		attr = new pthread_attr_t[roadNum]
+		attr = new pthread_attr_t[roadNum];
 
 		/* 產生岔路數量的robot */
 		for(size_t i = 0; i < roadNum; i++)
@@ -475,42 +475,50 @@ void *stepping(struct Robot &robot)
 
 			setWall(pRobot->pos);
 
-			pthread_create(tid+i, attr+i, stepping, pRobot)
+			pthread_create(tid+i, attr+i, stepping, reinterpret_cast<void*> (&(*pRobot)));
 		}
 
 		/* wait for all child thread */
 		bool isFound = false;
 		for(size_t i = 0; i < roadNum; i++)
 		{
-			size_t status;
-			pthread_join(tid+i, &status);
-			if (status == 1)
+			char *messages
+			pthread_join(tid+i, &messages);
+			printPosition(robot.pos, POSITION_PRINT_STYLE_RESULT);
+			cout << messages << endl;
+			if (strcmp(messages, "Found !") == 0)
 			{
-				printPosition(robot.pos);
-				cout << "Found !" << endl;
-				isFound = false;
-			} else if (status == 0 && !isFound)
-			{
-				printPosition(robot.pos);
-				cout << "None !" << endl;
+				isFound = true;
 			}
 		}
 
 		if(mainTid != syscall(SYS_gettid))
 		{
 			if (isFound)
-				pthread_exit(1);
-			else 
-				pthread_exit(0);
+			{
+				char *messages = "Found !";
+				pthread_exit(&messages));
+			}
+			else
+			{
+				char *messages = "None !";
+				pthread_exit(&messages));
+			}
 		}
 		
 
 
 	} else if(roadNum == 0 && mainTid != syscall(SYS_gettid)) {
 		if(isOre(robot.pos))
-			pthread_exit(1);
+		{
+			char *messages = "Found !";
+			pthread_exit(&messages));
+		}
 		else
-			pthread_exit(0);
+		{
+			char *messages = "None !";
+			pthread_exit(&messages));
+		}
 	}
 }
 
@@ -533,7 +541,7 @@ bool isDown(struct Position pos)
 		pMap = pMap->downFloor;
 
 	if(pMap->data[pos.x][pos.y] == MAP_WARP_DOWN)
-		return true
+		return true;
 	else
 		return false;
 }
@@ -546,7 +554,7 @@ bool isUp(struct Position pos)
 		pMap = pMap->downFloor;
 
 	if(pMap->data[pos.x][pos.y] == MAP_WARP_UP)
-		return true
+		return true;
 	else
 		return false;
 }
@@ -559,7 +567,7 @@ bool isOre(struct Position pos)
 		pMap = pMap->downFloor;
 
 	if(pMap->data[pos.x][pos.y] == MAP_ORE)
-		return true
+		return true;
 	else
 		return false;
 }
