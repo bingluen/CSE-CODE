@@ -126,11 +126,21 @@ bool isOre(struct Position pos);
 
 int main (int argc, char *argv[])
 {
+	struct timespec begin, end;
+	double timeCost = 0;
+	// get begin time 
+	clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &begin); 
+
 	mainTid = syscall(SYS_gettid);
 	loadPitMap(argv[1]);
-	printMap();
-
 	explore();
+
+	/* get end time  */
+	clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &end);
+
+	/* Nanosecond to millisecond */
+	timeCost = (end.tv_nsec - begin.tv_nsec) / 1000.0 / 1000.0;
+	cout << "總執行時間：" << timeCost << " ms" << endl;
 
 	return 0;
 }
@@ -314,7 +324,7 @@ void printMap()
 		}
 		pMap = pMap->downFloor;
 	}
-
+/*
 	cout << endl;
 	cout << "逆向列印" << endl;
 	pMap = pit.endFloor;
@@ -332,6 +342,7 @@ void printMap()
 		}
 		pMap = pMap->upFloor;
 	}
+	*/
 }
 
 struct Position searchStartPoint()
@@ -350,7 +361,7 @@ struct Position searchStartPoint()
 					startPoint.y = j;
 					startPoint.floor = k;
 
-					cout << "[Debug] startPoint: floors = " << startPoint.floor << " , startPoint.x = " << startPoint.x << " , startPoint.y = " << startPoint.y << endl;
+					//cout << "[Debug] startPoint: floors = " << startPoint.floor << " , startPoint.x = " << startPoint.x << " , startPoint.y = " << startPoint.y << endl;
 
 					return startPoint;
 				}
@@ -511,6 +522,11 @@ void *stepping(void *pRob)
 		/* set to wall */
 		if(!isOre(pR->pos))
 			setWall(pR->pos);
+
+		/* DEbug
+			printMap();
+			sleep(1);
+		*/
 	}
 
 	if(roadNum > 1)
@@ -541,23 +557,40 @@ void *stepping(void *pRob)
 			sleep(1);
 		}
 
+		/* wait for all thread */
+		bool isFound = false;
 		for(size_t i = 0; i < roadNum; i++)
 		{
-			char *messages;
-			pthread_join(*(tid+i), &messages);
-			
+			int *messages;
+			pthread_join(*(tid+i), reinterpret_cast<void **> (&messages));
+			if(*messages == 1)
+			{
+				isFound = true;
+				printPosition(pR->pos, POSITION_PRINT_STYLE_RESULT);
+				cout << " Found !" << endl;
+			}
+		}
+
+		if(mainTid != syscall(SYS_gettid)) 
+		{
+			int mFound = 1;
+			int mNone = 0;
+			if(isFound)
+				pthread_exit(&mFound);
+			else
+				pthread_exit(&mNone);
 		}
 
 	} else if(roadNum == 0 && mainTid != syscall(SYS_gettid)) {
-		char *mFound = "Found !";
-		char *mNonde = "None !";
+		int mFound = 1;
+		int mNone = 0;
 		if(isOre(pR->pos))
 		{
 			/* set to wall */
 			setWall(pR->pos);
 			printPosition(pR->pos, POSITION_PRINT_STYLE_RESULT);
 			cout << " Found !" << endl;
-			pthread_exit(mFound);
+			pthread_exit(&mFound);
 		}
 		else
 		{
@@ -565,7 +598,7 @@ void *stepping(void *pRob)
 			setWall(pR->pos);
 			printPosition(pR->pos, POSITION_PRINT_STYLE_RESULT);
 			cout << " None !" << endl;
-			pthread_exit(mNonde);
+			pthread_exit(&mNone);
 		}
 	}
 }
