@@ -15,7 +15,7 @@ ostream &operator<<(ostream &stream, const Queue &queue)
 			<< " )" << endl;
 	}
 
-	cout << "average waiting time :" << setprecision(2) << queue.getAvgWaiting() << "ms" << endl;
+	cout << "average waiting time :" << fixed << setprecision(2) << queue.getAvgWaiting() << "ms" << endl;
 	return stream;
 }
 
