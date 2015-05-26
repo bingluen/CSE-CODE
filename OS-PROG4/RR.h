@@ -11,6 +11,7 @@ public:
 private:
 	vector<struct process> queue;
 	int tq;
+	bool hasNewProcess(int timeCount, size_t &index);
 };
 
 #endif
