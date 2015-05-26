@@ -24,6 +24,12 @@ int main(int argc, char *argv[])
 	cout << "FCFS" << endl;
 	cout << fcfs << endl;
 
+	cout << "SJF" << endl;
+	cout << sjf << endl;
+
+	cout << "RR" << endl;
+	cout << rr << endl;
+
 	system("pause");
 	return 0;
 }
@@ -46,7 +52,7 @@ void loadFile(string fileName, FCFSQueue& fcfs, SJFQueue& sjf, RRQueue& rr)
 		/* get time quantum */
 		if (strcmp(lineString.substr(0, 3).c_str(), "TQ=") == 0 || strcmp(lineString.substr(0, 3).c_str(), "tq=") == 0)
 		{
-			//rr.setTQ(atoi(lineString.substr(3, lineString.length()).c_str()));
+			rr.setTQ(atoi(lineString.substr(3, lineString.length()).c_str()));
 			continue;
 		}
 
@@ -58,16 +64,18 @@ void loadFile(string fileName, FCFSQueue& fcfs, SJFQueue& sjf, RRQueue& rr)
 		struct process newProcess;
 
 		/* add process data */
-		sscanf(line, "%d,%f,%f", &(newProcess.id), &(newProcess.arrival), &(newProcess.burst));
+		sscanf(line, "%d,%d,%d", &(newProcess.id), &(newProcess.arrival), &(newProcess.burst));
 
 		newProcess.timeRequire = newProcess.burst;
-		newProcess.waiting = 0;
+		newProcess.waiting = newProcess.executeTimes = 0;
 
 		/* add to queue */
 		fcfs.push(newProcess);
-		//sjf.push(newProcess);
-		//rr.push(newProcess);
+		sjf.push(newProcess);
+		rr.push(newProcess);
 	}
 	fcfs.produceQueue();
+	sjf.produceQueue();
+	rr.produceQueue();
 }
 
