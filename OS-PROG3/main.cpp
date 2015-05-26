@@ -1,4 +1,4 @@
-#include <iostream>
+﻿#include <iostream>
 #include <fstream>
 #include <string>
 #include <cstring>
@@ -9,6 +9,7 @@
 #include <pthread.h>
 #include <stdio.h>
 #include <syscall.h>
+#include <iomanip>
 
 using namespace std;
 
@@ -318,7 +319,7 @@ void printMap()
 	struct Map* pMap = pit.startFloor;
 	for(size_t i = 0; i < pit.floors; i++)
 	{
-		cout << "第 " << "-" <<i << " 層" << endl;
+		cout << "第 " << setiosflags(ios::showpos) << i*-1 << " 層" << endl;
 		for(size_t j = 0; j < pMap->row; j++)
 		{
 			for(size_t k = 0; k < 22; k++)
@@ -385,13 +386,13 @@ void printPosition(struct Position pos, int style)
 		switch(style)
 		{
 			case POSITION_PRINT_STYLE_STD:
-				cout << "[tid = " << syscall(SYS_gettid) << "]: (" << pos.floor * -1 << "," << pos.x - 1 << "," << pos.y - 1 << ")" << endl;
+				cout << "[tid = " << syscall(SYS_gettid) << "]: (" << showpos << pos.floor * -1 << "," << noshowpos << pos.x - 1 << "," << pos.y - 1 << ")" << endl;
 				break;
 			case POSITION_PRINT_STYLE_RESULT:
-				cout << syscall(SYS_gettid) << "(" << pos.floor * -1 << "," << pos.x - 1 << "," << pos.y - 1 << ")";
+				cout << syscall(SYS_gettid) << "(" << showpos << pos.floor * -1 << "," << noshowpos << pos.x - 1 << "," << pos.y - 1 << ")";
 				break;
 			case POSITION_PRINT_STYLE_DEBUG:
-				cout << "[Debug] [tid = " << syscall(SYS_gettid) << "]: (" << pos.floor * -1 << "," << pos.x - 1 << "," << pos.y - 1 << ")" << endl;
+				cout << "[Debug] [tid = " << syscall(SYS_gettid) << "]: (" << showpos << pos.floor * -1 << "," << noshowpos << pos.x - 1 << "," << pos.y - 1 << ")" << endl;
 				break;
 		}
 	} else {
