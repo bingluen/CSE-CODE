@@ -20,7 +20,8 @@ void SJFQueue::produceQueue()
 	}
 
 	/* ­pºâ®É¶¡ */
-	float elapsedTime = 0, avgWaiting = 0;;
+	int elapsedTime = 0;
+	float avgWaiting = 0;;
 	for (size_t i = 0; i < queue.size(); i++)
 	{
 		queue[i].start = elapsedTime;
