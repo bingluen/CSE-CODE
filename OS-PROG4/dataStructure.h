@@ -2,6 +2,7 @@
 #define PROCESS
 struct process {
 	unsigned int id;
-	float arrival, burst, start, end, waiting, timeRequire;
+	int executeTimes;
+	int arrival, burst, start, end, waiting, timeRequire;
 };
 #endif
