@@ -29,8 +29,6 @@ int main(int argc, char *argv[])
 
 	cout << "RR" << endl;
 	cout << rr << endl;
-
-	system("pause");
 	return 0;
 }
 
