@@ -8,7 +8,7 @@ using namespace std;
 
 
 
-void loadFile(string fileName, FCFSQueue& fcfs, SJFQueue& sjf, RRQueue& rr);
+void loadFile(char *fileName, FCFSQueue& fcfs, SJFQueue& sjf, RRQueue& rr);
 
 int main(int argc, char *argv[])
 {
@@ -32,7 +32,7 @@ int main(int argc, char *argv[])
 	return 0;
 }
 
-void loadFile(string fileName, FCFSQueue& fcfs, SJFQueue& sjf, RRQueue& rr)
+void loadFile(char* fileName, FCFSQueue& fcfs, SJFQueue& sjf, RRQueue& rr)
 {
 	ifstream loadfile(fileName, ios::in);
 	if (!loadfile)
