@@ -8,5 +8,6 @@ public:
 	struct process getQueue(size_t index) const;
 private:
 	vector<struct process> queue;
+	int findShortBurst(int offset);
 };
 #endif
