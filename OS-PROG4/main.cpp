@@ -3,6 +3,7 @@
 #include "RR.h"
 #include <fstream>
 #include <string>
+#include <stdlib.h>
 
 using namespace std;
 
