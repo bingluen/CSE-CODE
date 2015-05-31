@@ -1,5 +1,20 @@
 #include "item.h"
 
+Item::Item()
+{
+
+}
+
+Item::Item(ItemElement ie)
+{
+	this->setBuyer(ie.buyer);
+	this->setPrice(ie.price);
+	this->setProductId(ie.productId);
+	this->setProductName(ie.productName);
+	this->setQuantity(ie.quantity);
+	this->setSeller(ie.seller);
+}
+
 long long unsigned int Item::getProductId()
 {
 	return this->productId;
@@ -14,15 +29,15 @@ long long unsigned int Item::getQuantity()
 }
 string Item::getProductName()
 {
-	return string(this->productName);
+	return this->productName;
 }
 string Item::getSeller()
 {
-	return string(this->seller);
+	return this->seller;
 }
 string Item::getBuyer()
 {
-	return string(this->buyer);
+	return this->buyer;
 }
 
 void Item::setProductId(long long unsigned int id)

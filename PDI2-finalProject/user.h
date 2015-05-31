@@ -11,8 +11,20 @@ const size_t EMAIL_LENGTH = 50;
 const size_t PHONE_LENGTH = 10;
 const size_t ADDRESS_LENGTH = 200;
 
+typedef struct {
+	char id[ID_LENGTH + 1];
+	char password[PASSWORD_LENGTH + 1];
+	char name[NAME_LENGTH + 1];
+	char idNumber[ID_NUMBER_LENGTH + 1];
+	char email[EMAIL_LENGTH + 1];
+	char phone[PHONE_LENGTH + 1];
+	char address[ADDRESS_LENGTH + 1];
+} UserElement;
+
 class User {
 public:
+	User();
+	User(UserElement);
 	string getId();
 	string getPassword();
 	string getName();

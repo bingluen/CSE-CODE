@@ -7,8 +7,17 @@ const size_t PRODUCT_NAME_LENGTH = 50;
 const size_t SELLER_LENGTH = 20;
 const size_t BUYER_LENGTH = 50;
 
+typedef struct {
+	long long unsigned int productId, price, quantity;
+	char productName[PRODUCT_NAME_LENGTH + 1];
+	char seller[SELLER_LENGTH + 1];
+	char buyer[BUYER_LENGTH + 1];
+} ItemElement;
+
 class Item {
 public:
+	Item();
+	Item(ItemElement);
 	long long unsigned int getProductId();
 	long long unsigned int getPrice();
 	long long unsigned int getQuantity();
