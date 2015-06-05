@@ -21,6 +21,7 @@ public:
    int getSessionTimeCode();
    void setNumTickets( int theNumTickets[] );
    int getNumTickets( int ticketType );
+   int getNumTickets();
    void setSeletedSeats( string theSeletedSeats[], int numSeats );
    string getSeletedSeat( int number );
    void displayBooking( MovieDatabase &movieDatabase );

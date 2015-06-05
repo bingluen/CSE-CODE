@@ -82,5 +82,36 @@ string Booking::getSeletedSeat( int number )
 
 void Booking::displayBooking(MovieDatabase &movieDatabase)
 {
+	const char ticketType[][20] = { "Adult ticket", "Concession tickets", "Disability ticket", "elderly tickets" };
 
+
+	cout << setw(20) << " "
+		<< "No. of Tickets"
+		<< "Price"
+		<< "Subtotal"
+		<< endl;
+
+	int total = 0;
+
+	for (size_t i = 0; i < 2; i++)
+	{
+		cout << setw(20) << ticketType[i]
+			<< setw(15) << this->numTickets[i]
+			<< setw(6) << this->numTickets[i] * movieDatabase.getMovie(this->movieCode).getPrice(i)
+			<< endl;
+
+		total += this->numTickets[i] * movieDatabase.getMovie(this->movieCode).getPrice(i);
+	}
+
+	cout << "Total Amount For Tickets: " << total << endl;
+}
+
+int Booking::getNumTickets()
+{
+	int total = 0;
+	for (size_t i = 0; i < 4; i++)
+	{
+		total += numTickets[i];
+	}
+	return total;
 }
