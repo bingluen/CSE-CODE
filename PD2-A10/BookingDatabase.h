@@ -27,4 +27,13 @@ private:
    void saveBookings(); // stores bookings into the file Bookings.dat
 }; // end class BookingDatabase
 
+typedef struct{
+	char email[40];
+	int movieCode;
+	int dateCode;
+	int sessionTimeCode;
+	int numTickets[4];
+	char seletedSeats[24][2];
+} bookingdata;
+
 #endif // BOOKING_DATABASE_H
