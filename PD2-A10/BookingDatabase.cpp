@@ -46,10 +46,10 @@ void BookingDatabase::displayBookings(string email, MovieDatabase &movieDatabase
 		{
 			cout << "Movie: " << movieNames[it->getMovieCode()] << endl;
 			cout << "Date: " << availableDates[it->getDateCode()] << endl;
-			cout << "Show Time: " << hours[it->getSessionTimeCode] << endl;
+			cout << "Show Time: " << hours[it->getSessionTimeCode()] << endl;
 			cout << "Seats: ";
 			for (size_t i = 0; i < it->getNumTickets(); i++)
-				cout << it->getSeletedSeat(i) << " " << endl;
+				cout << it->getSeletedSeat(i) << " ";
 
 			cout << endl;
 		}
@@ -61,7 +61,14 @@ void BookingDatabase::loadBookings()
 	// loads bookings from the file Bookings.dat
 	ifstream loadFile("Bookings.dat", ios::in | ios::binary);
 
-	while (true)
+
+	loadFile.seekg(0, ios::end);
+
+	int conut = loadFile.tellg() / sizeof(bookingdata);
+
+	loadFile.seekg(0, ios::beg);
+
+	for (size_t i = 0; i < conut; i++)
 	{
 		bookingdata data;
 
@@ -88,11 +95,9 @@ void BookingDatabase::loadBookings()
 
 		this->bookings.push_back(newbooking);
 
-		if (!loadFile)
-			break;
 	}
 
-	
+	loadFile.close();
 }
 
 void BookingDatabase::saveBookings()
@@ -109,8 +114,9 @@ void BookingDatabase::saveBookings()
 		for (size_t i = 0; i < 4; i++)
 			data.numTickets[i] = it->getNumTickets(i);
 		for (size_t i = 0; i < it->getNumTickets(); i++)
-			strcpy(data.seletedSeats[i], it->getSeletedSeat(i).c_str());
+			strncpy(data.seletedSeats[i], it->getSeletedSeat(i).c_str(), 2);
 		data.sessionTimeCode = it->getSessionTimeCode();
 		saving.write(reinterpret_cast<char *>( &data), sizeof(bookingdata));
 	}
+	saving.close();
 }

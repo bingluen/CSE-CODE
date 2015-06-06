@@ -106,7 +106,7 @@ void signIn( MemberDatabase &memberDatabase )
    BuyTickets buyTickets( movieDatabase, bookingDatabase, email );
    int choice;
 
-   while( true )
+    while( true )
    {
       cout << "\nEnter your choice:" << endl;
       cout << "1. Account Information\n";

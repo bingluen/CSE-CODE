@@ -38,7 +38,7 @@ void MemberDetails::execute(Vector< Member >::iterator it)
 	cout << "5. Password: " << it->getPassword() << endl;
 
 	int choice;
-	do { cout << "Which one do you want to modify (0 -  not modify )?";  } while (choice = inputAnInteger(0, 5));
+	do { cout << "Which one do you want to modify (0 -  not modify)?";  } while ((choice = inputAnInteger(0, 5)) == -1);
 
 	if (choice == 0)
 		return;
@@ -47,9 +47,8 @@ void MemberDetails::execute(Vector< Member >::iterator it)
 
 	while (loopFlag)
 	{
-		cout << "Enter correct data: " << endl;
+		cout << "Enter correct data: ";
 		string input;
-		cin.ignore();
 		getline(cin, input);
 
 		switch (choice) {

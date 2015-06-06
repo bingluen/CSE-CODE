@@ -26,4 +26,12 @@ private:
    bool occupiedSeats[ 9 ][ 17 ][ 8 ][ 12 ]; // occupiedSeats[i][j] is the occupied Seats for all accounts
 };                                           // at j-th session time on i-th date
 
+typedef struct {
+	int movieCode;
+	int prices[4];
+	bool dates[9];
+	bool sessionTimes[17];
+	bool occupiedSeats[9][17][8][12];
+} movie;
+
 #endif

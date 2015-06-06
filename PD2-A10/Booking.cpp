@@ -69,6 +69,7 @@ void Booking::setSeletedSeats( string theSeletedSeats[], int numSeats )
    {
       seletedSeats[ i ][ 0 ] = theSeletedSeats[ i ][ 0 ];
       seletedSeats[ i ][ 1 ] = theSeletedSeats[ i ][ 1 ];
+	  seletedSeats[ i ][ 2 ] = '\0';
    }
 }
 
@@ -93,7 +94,7 @@ void Booking::displayBooking(MovieDatabase &movieDatabase)
 
 	int total = 0;
 
-	for (size_t i = 0; i < 2; i++)
+	for (size_t i = 0; i < 4; i++)
 	{
 		cout << setw(20) << ticketType[i]
 			<< setw(15) << this->numTickets[i]

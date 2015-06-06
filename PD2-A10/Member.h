@@ -30,4 +30,12 @@ private:
    char phone[ 12 ];
 };
 
+
+typedef struct {
+	char email[40];
+	char password[24];
+	char idNumber[12];
+	char name[12];
+	char phone[12];
+}member;
 #endif

@@ -18,41 +18,36 @@ void NewMember::execute()
 	Member newMember;
 
 	cout << "Enter your ID Number: ";
-	cin.ignore();
 	getline(cin, input);
 	if (memberDatabase.existingId(input))
 	{
-		cout << "An account already exists with the ID number !" << endl;
+		cout << "An account already exists with the ID number !\n" << endl;
 		return;
 	}
 	newMember.setIdNumber(input);
 	
 	cout << "Enter your name: ";
-	cin.ignore();
 	getline(cin, input);
 	newMember.setName(input);
 
 	cout << "Enter your email address: ";
-	cin.ignore();
 	getline(cin, input);
 	if (memberDatabase.existingEmail(input))
 	{
-		cout << "An account already exits with the email address !" << endl;
+		cout << "An account already exits with the email address !\n" << endl;
 		return;
 	}
 	newMember.setEmail(input);
 
 	cout << "Enter your password: ";
-	cin.ignore();
 	getline(cin, input);
 	newMember.setPassword(input);
 
 	cout << "Enter your phone number: ";
-	cin.ignore();
 	getline(cin, input);
 	newMember.setPhone(input);
 
 	memberDatabase.addMember(newMember);
 
-	cout << "Successful!" << endl;
+	cout << "\nSuccessful!\n" << endl;
 }

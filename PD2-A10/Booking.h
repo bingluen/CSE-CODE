@@ -33,7 +33,7 @@ private:
    int sessionTimeCode;
    int numTickets[ 4 ]; // numTickets[0]: the number of adult tickets, numTickets[1]: the number of concession tickets,
                         // numTickets[2]: the number of disability tickets, numTickets[3]: the number of elderly tickets
-   char seletedSeats[ 24 ][ 2 ]; // seleted seats for the user with the specified email
+   char seletedSeats[ 24 ][ 3 ]; // seleted seats for the user with the specified email
 };
 
 #endif
