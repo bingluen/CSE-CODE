@@ -102,7 +102,7 @@ void* threading(void* threadContext)
 {
 	Thread *thread = ( reinterpret_cast<Thread* > (&threadContext) );
 
-	switch(thread.identity)
+	switch(thread->identity)
 	{
 		case IDENTITY_PRODUCER:
 			producer(thread);
@@ -120,7 +120,7 @@ void producer(Thread* producerThread)
 
 		//把東西取走
 		for(size_t i = 0; i < NUM_TYPE_MATERIAL; i++)
-			desk[i] = false;
+			desk.material[i] = false;
 
 		//數量++
 		producerThread->numOutput++;
@@ -137,7 +137,7 @@ void dispacher(Thread* dispacherThread)
 {
 	srand(time(NULL));
 	while(numProduct < 40) {
-		sem_wait(&threadSem[producerThread->id]);
+		sem_wait(&threadSem[dispacherThread->id]);
 
 		//隨機放上東西
 		for(size_t i = 0; i < 3;)
