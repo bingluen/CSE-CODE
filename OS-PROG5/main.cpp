@@ -100,7 +100,7 @@ void basic()
 
 void* threading(void* threadContext)
 {
-	Thread *thread = ( reinterpret_cast<Thread* > threadContext );
+	Thread *thread = ( reinterpret_cast<Thread* > (&threadContext) );
 
 	switch(thread.identity)
 	{
@@ -116,7 +116,7 @@ void* threading(void* threadContext)
 void producer(Thread* producerThread)
 {
 	while(numProduct < 40) {
-		sem_wait(threadSem[producerThread->id]);
+		sem_wait(&threadSem[producerThread->id]);
 
 		//把東西取走
 		for(size_t i = 0; i < NUM_TYPE_MATERIAL; i++)
@@ -127,7 +127,7 @@ void producer(Thread* producerThread)
 		numProduct++;
 
 		//打開dispacher 的 sem
-		sem_post(threadSem[0]);
+		sem_post(&threadSem[0]);
 		
 	}
 
@@ -137,7 +137,7 @@ void dispacher(Thread* dispacherThread)
 {
 	srand(time(NULL));
 	while(numProduct < 40) {
-		sem_wait(threadSem[producerThread->id]);
+		sem_wait(&threadSem[producerThread->id]);
 
 		//隨機放上東西
 		for(size_t i = 0; i < 3;)
@@ -154,7 +154,7 @@ void dispacher(Thread* dispacherThread)
 		{
 			//因為produce的sem是1~4 所以要+1
 			if(!desk.material[i])
-				sem_post(threadSem[i+1]);
+				sem_post(&threadSem[i+1]);
 		}
 	}
 }
