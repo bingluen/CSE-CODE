@@ -47,6 +47,8 @@ void producerAdvance(Thread*);
 void dispatcherAdvance(Thread*);
 void *threadingAdvance(void*);
 
+int compareNumOutput(const void*, const void*);
+
 /* Declare global variable */
 
 Desk desk;
@@ -137,6 +139,15 @@ void basic()
 	for(size_t i = 0; i < 5; i++)
 	{
 		pthread_join(*(thread_id+i), NULL);
+	}
+
+	/* 總結 */
+	qsort(thread+1, 4, sizeof(Thread), compareNumOutput);
+	cout << "-----------------" << endl;
+	for(size_t i = 1; i < 5; i++)
+	{
+		cout << "Producer(" << MATERIAL_NAME[thread[i].heldMaterials - 1]
+			<< ") :" << thread[i].numOutput << " Robot(s)" << endl;
 	}
 }
 
@@ -277,6 +288,15 @@ void advance() {
 	{
 		pthread_join(*(thread_id+i), NULL);
 	}
+
+	/* 總結 */
+	qsort(thread_producer, 4, sizeof(Thread), compareNumOutput);
+	cout << "-----------------" << endl;
+	for(size_t i = 0; i < 4; i++)
+	{
+		cout << "Producer(" << MATERIAL_NAME[thread_producer[i].heldMaterials - 1]
+			<< ") :" << thread_producer[i].numOutput << " Robot(s)" << endl;
+	}
 }
 
 void *threadingAdvance(void* threadContext)
@@ -383,4 +403,9 @@ void dispatcherAdvance(Thread* thread_dispatcher)
 			}
 		}
 	}
+}
+
+int compareNumOutput(const void* a, const void* b)
+{
+	return ((Thread*)a)->numOutput - ((Thread*)b)->numOutput;
 }
