@@ -26,7 +26,7 @@ typedef struct {
 
 
 typedef struct {
-	unsigned short int pid;
+	unsigned short int id;
 	unsigned short int identity;
 	unsigned short int heldMaterials;
 	unsigned short int numOutput;
