@@ -38,7 +38,7 @@ typedef struct {
 /* Function prototype */
 void basic();
 void advance();
-void threading(void*);
+void *threading(void*);
 void producer(Thread*);
 void dispacher(Thread*);
 
@@ -98,7 +98,7 @@ void basic()
 	}
 }
 
-void threading(void* threadContext)
+void* threading(void* threadContext)
 {
 	Thread *thread = ( reinterpret_cast<Thread* > threadContext );
 
