@@ -8,15 +8,15 @@
 
 /* define constant */
 
-const unsigned short int MATERIAL_BATTERY 1;
-const unsigned short int MATERIAL_SENSOR 2;
-const unsigned short int MATERIAL_WIFI 3;
-const unsigned short int MATERIAL_CRAWLER 4;
+const unsigned short int MATERIAL_BATTERY = 1;
+const unsigned short int MATERIAL_SENSOR = 2;
+const unsigned short int MATERIAL_WIFI = 3;
+const unsigned short int MATERIAL_CRAWLER = 4;
 
-const unsigned short int IDENTITY_PRODUCER 0;
-const unsigned short int IDENTITY_DISPACHER 1;
+const unsigned short int IDENTITY_PRODUCER = 0;
+const unsigned short int IDENTITY_DISPACHER = 1;
 
-const unsigned short int NUM_TYPE_MATERIAL 4;
+const unsigned short int NUM_TYPE_MATERIAL = 4;
 
 /* define data structure */
 
