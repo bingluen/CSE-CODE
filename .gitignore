@@ -200,3 +200,7 @@ FakesAssemblies/
 *.vcxproj
 *.filters
 *.zip
+*.doc
+*.pdf
+*.docx
+*.exe
