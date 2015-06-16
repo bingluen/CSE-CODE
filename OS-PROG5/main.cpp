@@ -6,6 +6,8 @@
 #include <semaphore.h>
 #include <time.h>
 
+using namespace std;
+
 /* define constant */
 
 const unsigned short int MATERIAL_BATTERY = 1;
@@ -87,18 +89,18 @@ void basic()
 	for(size_t i = 0; i < 5; i++)
 	{
 		pthread_attr_init(thread_attr+i);
-		pthread_create(thread_id+i, thread_attr+i, threading, reinterpret_cast<void *> (thread+i));
+		pthread_create(thread_id+i, thread_attr+i, threading, reinterpret_cast<void *> (&thread[i]));
 	}
 
 	for(size_t i = 0; i < 5; i++)
 	{
-		pthread_join(thread_id+i, thread_att+i, threading, reinterpret_cast<void *> (thread+i));
+		pthread_join(*(thread_id+i), NULL);
 	}
 }
 
 void threading(void* threadContext)
 {
-	Thread *thread = ( reinterpret_cast<* Thread> threadContext );
+	Thread *thread = ( reinterpret_cast<Thread* > threadContext );
 
 	switch(thread.identity)
 	{
